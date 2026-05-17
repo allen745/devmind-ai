@@ -26,7 +26,7 @@ def home():
 @app.post("/review")
 def review_code(input: CodeInput):
     response = client.chat.completions.create(
-        model="llama3-8b-8192",
+        model="llama-3.3-70b-versatile",
         messages=[{
             "role": "user",
             "content": f"Review this {input.language} code. Find bugs, security issues and give a score out of 100:\n\n{input.code}"
@@ -41,7 +41,7 @@ class BugInput(BaseModel):
 @app.post("/bughunt")
 def hunt_bug(input: BugInput):
     response = client.chat.completions.create(
-        model="llama3-8b-8192",
+        model="llama-3.3-70b-versatile",
         messages=[{
             "role": "user",
             "content": f"I got this error in my {input.language} code:\n\nError: {input.error}\n\nCode: {input.code}\n\nExplain why this bug occurred and provide the fixed code."
@@ -57,7 +57,7 @@ class DocInput(BaseModel):
 @app.post("/devdocs")
 def generate_docs(input: DocInput):
     response = client.chat.completions.create(
-        model="llama3-8b-8192",
+        model="llama-3.3-70b-versatile",
         messages=[{
             "role": "user",
             "content": f"Generate a {input.doc_type} for this {input.language} code:\n\n{input.code}"
