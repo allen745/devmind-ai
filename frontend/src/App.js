@@ -115,8 +115,8 @@ def review_code(code: str):
       <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "500px", height: "500px", borderRadius: "50%", background: "rgba(255,255,255,0.05)", filter: "blur(60px)" }} />
       <div style={{ position: "absolute", bottom: "-20%", right: "-10%", width: "600px", height: "600px", borderRadius: "50%", background: "rgba(255,255,255,0.05)", filter: "blur(80px)" }} />
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1200px", width: "100%", gap: "4rem" }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1200px", width: "100%", gap: "4rem", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: "280px" }}>
           <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px", letterSpacing: "3px", marginBottom: "1rem", textTransform: "uppercase" }}>
             Introducing &nbsp;•&nbsp; <span style={{ color: "#fff", fontWeight: "bold" }}>Your AI Dev Partner</span>
           </p>
@@ -137,7 +137,7 @@ def review_code(code: str):
           </button>
         </div>
 
-        <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+        <div style={{ flex: 1, display: "flex", justifyContent: "center", minWidth: "300px" }}>
           <div style={{ position: "relative" }}>
             <div style={{ background: "#1a1a2e", borderRadius: "12px 12px 0 0", padding: "8px", border: "3px solid #333", width: "480px", boxShadow: "0 30px 60px rgba(0,0,0,0.5)" }}>
               <div style={{ background: "#111", borderRadius: "8px 8px 0 0", padding: "6px 12px", display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
