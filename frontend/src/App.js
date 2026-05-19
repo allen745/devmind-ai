@@ -181,10 +181,15 @@ export default function App() {
   const [docType, setDocType] = useState("readme");
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dots, setDots] = useState("");
 
   const analyze = async () => {
     setLoading(true);
     setSections([]);
+    const dotsInterval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? "" : prev + "●");
+    }, 500);
+
     try {
       let body, endpoint;
       if (tab === "review") { endpoint = "/review"; body = { code, language }; }
@@ -201,7 +206,10 @@ export default function App() {
     } catch (e) {
       setSections([{ type: "raw", content: "Error connecting to API!" }]);
     }
+    clearInterval(dotsInterval);
+    setDots("");
     setLoading(false);
+
   };
 
   const handleFile = (e) => {
@@ -296,7 +304,7 @@ export default function App() {
               <label style={{ color: "#555", fontSize: "11px", display: "block", marginBottom: "4px" }}>ACTION</label>
               <button onClick={analyze} disabled={loading}
                 style={{ padding: "0.5rem 2rem", background: loading ? "#333" : tab === "review" ? "#00ff88" : tab === "bughunt" ? "#ff4444" : "#4488ff", color: loading ? "#666" : "#000", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "15px", fontFamily: "monospace", letterSpacing: "1px" }}>
-                {loading ? "⏳ Analyzing..." : "Analyze →"}
+                {loading ? `⏳ Analyzing${dots}` : "Analyze →"}
               </button>
             </div>
           </div>
