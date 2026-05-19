@@ -120,7 +120,7 @@ def review_code(code: str):
           <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px", letterSpacing: "3px", marginBottom: "1rem", textTransform: "uppercase" }}>
             Introducing &nbsp;•&nbsp; <span style={{ color: "#fff", fontWeight: "bold" }}>Your AI Dev Partner</span>
           </p>
-          <h1 style={{ fontSize: "clamp(3rem, 8vw, 6rem)", fontWeight: "900", color: "#fff", margin: "0 0 1.5rem", lineHeight: "1", letterSpacing: "-2px", fontFamily: "Arial Black, sans-serif" }}>
+          <h1 style={{ fontSize: "clamp(3rem, 8vw, 6re m)", fontWeight: "900", color: "#fff", margin: "0 0 1.5rem", lineHeight: "1", letterSpacing: "-2px", fontFamily: "Arial Black, sans-serif" }}>
             DEVMIND<br />AI
           </h1>
           <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "1.2rem", lineHeight: "1.6", marginBottom: "2.5rem", maxWidth: "450px" }}>
@@ -206,16 +206,16 @@ export default function App() {
     <div style={{ background: "#0a0a0a", minHeight: "100vh", color: "#fff", fontFamily: "'Courier New', monospace", backgroundImage: "radial-gradient(circle at 1px 1px, #1a1a1a 1px, transparent 0)", backgroundSize: "40px 40px" }}>
 
       {/* Header */}
-      <div style={{ background: "#111", borderBottom: "1px solid #222", padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ background: "#111", borderBottom: "1px solid #222", padding: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
         <h1 style={{ color: "#00ff88", margin: 0, fontSize: "1.5rem", letterSpacing: "2px", cursor: "pointer" }} onClick={() => setPage("landing")}>🧠 DEVMIND AI</h1>
         <p style={{ color: "#555", margin: 0, fontSize: "12px" }}>The All-in-One AI Platform for Developers</p>
       </div>
 
       {/* Body */}
-      <div style={{ display: "flex", minHeight: "calc(100vh - 60px)" }}>
+      <div style={{ display: "flex", minHeight: "calc(100vh - 60px)", flexDirection: window.innerWidth < 768 ? "column" : "row" }}>
 
         {/* Sidebar */}
-        <div style={{ width: "220px", background: "#111", borderRight: "1px solid #222", padding: "1.5rem", flexShrink: 0 }}>
+        <div style={{ width: window.innerWidth < 768 ? "100%" : "220px", background: "#111", borderRight: window.innerWidth < 768 ? "none" : "1px solid #222", borderBottom: window.innerWidth < 768 ? "1px solid #222" : "none", padding: "1rem", display: "flex", flexDirection: window.innerWidth < 768 ? "row" : "column", gap: "0.5rem", flexShrink: 0, overflowX: "auto" }}>
           <p style={{ color: "#555", fontSize: "11px", letterSpacing: "2px", marginBottom: "1.5rem" }}>TOOLS</p>
           {[
             { id: "review", icon: "🔍", label: "Code Review", desc: "Review & score your code", color: "#00ff88" },
@@ -223,16 +223,16 @@ export default function App() {
             { id: "devdocs", icon: "📚", label: "Dev Docs", desc: "Generate documentation", color: "#4488ff" },
           ].map((t) => (
             <div key={t.id} onClick={() => { setTab(t.id); setSections([]); }}
-              style={{ padding: "1rem", borderRadius: "10px", marginBottom: "0.75rem", cursor: "pointer", background: tab === t.id ? `${t.color}15` : "transparent", border: `1px solid ${tab === t.id ? t.color : "#222"}`, transition: "all 0.2s" }}>
-              <div style={{ fontSize: "1.2rem", marginBottom: "4px" }}>{t.icon}</div>
-              <p style={{ color: tab === t.id ? t.color : "#fff", fontWeight: "bold", margin: "0 0 4px", fontSize: "13px" }}>{t.label}</p>
-              <p style={{ color: "#555", fontSize: "11px", margin: 0, lineHeight: "1.4" }}>{t.desc}</p>
+              style={{ padding: window.innerWidth < 768 ? "0.5rem 1rem" : "1rem", borderRadius: "10px", marginBottom: window.innerWidth < 768 ? "0" : "0.75rem", cursor: "pointer", background: tab === t.id ? `${t.color}15` : "transparent", border: `1px solid ${tab === t.id ? t.color : "#222"}`, transition: "all 0.2s", display: "flex", flexDirection: window.innerWidth < 768 ? "row" : "column", alignItems: "center", gap: "0.5rem", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: "1.2rem" }}>{t.icon}</div>
+              <p style={{ color: tab === t.id ? t.color : "#fff", fontWeight: "bold", margin: "0", fontSize: "13px" }}>{t.label}</p>
+              {window.innerWidth >= 768 && <p style={{ color: "#555", fontSize: "11px", margin: 0, lineHeight: "1.4" }}>{t.desc}</p>}
             </div>
           ))}
         </div>
 
         {/* Main Content */}
-        <div style={{ flex: 1, padding: "2rem", maxWidth: "900px" }}>
+        <div style={{ flex: 1, padding: window.innerWidth < 768 ? "1rem" : "2rem", width: "100%", boxSizing: "border-box" }}>
 
           {tab === "bughunt" && (
             <div style={{ marginBottom: "1rem" }}>
@@ -250,7 +250,7 @@ export default function App() {
               style={{ width: "100%", height: "220px", padding: "1rem", background: "#111", color: "#00ff88", border: "1px solid #222", borderRadius: "8px", fontFamily: "monospace", fontSize: "13px", resize: "vertical", boxSizing: "border-box", lineHeight: "1.6", marginTop: "4px" }} />
           </div>
 
-          <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem", flexWrap: "wrap", alignItems: "flex-end" }}>
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "flex-end" }}>
             <div>
               <label style={{ color: "#555", fontSize: "11px", display: "block", marginBottom: "4px" }}>LANGUAGE</label>
               <select value={language} onChange={(e) => setLanguage(e.target.value)}
