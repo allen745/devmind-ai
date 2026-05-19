@@ -72,9 +72,20 @@ const ResultCard = ({ sections }) => {
         );
         if (s.type === "code") {
           const codeMatch = s.content.match(/```(?:\w+)?\n?([\s\S]*?)```/);
+          const codeToCopy = codeMatch ? codeMatch[1] : s.content;
           return (
             <div key={i} style={{ background: "#001a00", border: "1px solid #00ff88", borderRadius: "12px", padding: "1.5rem" }}>
-              <h3 style={{ color: "#00ff88", margin: "0 0 12px" }}>✅ Fixed Code</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <h3 style={{ color: "#00ff88", margin: "0" }}>✅ Fixed Code</h3>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(codeToCopy);
+                    alert("✅ Code copied!");
+                  }}
+                  style={{ padding: "0.4rem 1rem", background: "#00ff88", color: "#000", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "12px", fontFamily: "monospace" }}>
+                  📋 Copy Code
+                </button>
+              </div>
               {codeMatch ? <CodeBlock code={codeMatch[1]} /> : <ReactMarkdown>{s.content}</ReactMarkdown>}
             </div>
           );
