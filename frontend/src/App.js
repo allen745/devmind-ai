@@ -245,7 +245,7 @@ export default function App() {
       {/* Header */}
       <div style={{ background: "#111", borderBottom: "1px solid #222", padding: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
         <h1 style={{ color: "#00ff88", margin: 0, fontSize: "1.5rem", letterSpacing: "2px", cursor: "pointer" }} onClick={() => setPage("landing")}>🧠 DEVMIND AI</h1>
-        <p style={{ color: "#FF0000", margin: 0, fontSize: "12px" }}>The All-in-One AI Platform for Developers</p>
+        <p style={{ color: "#888", margin: 0, fontSize: "12px" }}>The All-in-One AI Platform for Developers</p>
       </div>
 
       {/* Body */}
