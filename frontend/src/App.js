@@ -172,8 +172,9 @@ def review_code(code: str):
   );
 };
 const detectLanguage = (code) => {
-  if (code.includes("def ") || code.includes("import ") && !code.includes("function")) return "python";
-  if (code.includes("function") || code.includes("const ") || code.includes("let ")) return "javascript";
+  if (!code || code.trim() === "") return "python";
+  if (code.includes("def ") || (code.includes("import ") && !code.includes("function"))) return "python";
+  if (code.includes("function") || code.includes("const ") || code.includes("let ") || code.includes("console.log")) return "javascript";
   if (code.includes("public class") || code.includes("System.out")) return "java";
   if (code.includes("#include") || code.includes("cout")) return "c++";
   if (code.includes("<html>") || code.includes("<div>")) return "html";
