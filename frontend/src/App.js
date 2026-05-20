@@ -182,6 +182,8 @@ export default function App() {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dots, setDots] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [githubError, setGithubError] = useState("");
 
   const analyze = async () => {
     setLoading(true);
@@ -219,6 +221,22 @@ export default function App() {
     reader.readAsText(file);
   };
 
+
+  const fetchGithubCode = async () => {
+     setGithubError("");
+     try {
+       const url = githubUrl
+         .replace("github.com", "raw.githubusercontent.com")
+         .replace("/blob/", "/");
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Could not fetch file!");
+       const text = await res.text();
+       setCode(text);
+       setGithubError("✅ Code loaded from GitHub!");
+     }   catch (e) {
+      setGithubError("❌ Invalid URL! Paste a direct file link.");
+     }
+  };
   if (page === "landing") return <LandingPage onStart={() => setPage("app")} />;
 
   return (
@@ -260,7 +278,29 @@ export default function App() {
                 style={{ width: "100%", padding: "1rem", background: "#1a0000", color: "#ff4444", border: "1px solid #ff4444", borderRadius: "8px", marginTop: "4px", fontFamily: "monospace", fontSize: "13px", boxSizing: "border-box" }} />
             </div>
           )}
-
+          <div style={{ marginBottom: "1rem" }}>
+  <label style={{ color: "#555", fontSize: "12px", letterSpacing: "1px" }}>
+    GITHUB FILE URL (OPTIONAL)
+  </label>
+  <div style={{ display: "flex", gap: "0.5rem", marginTop: "4px" }}>
+    <input
+      placeholder="https://github.com/user/repo/blob/main/file.py"
+      value={githubUrl}
+      onChange={(e) => setGithubUrl(e.target.value)}
+      style={{ flex: 1, padding: "0.75rem", background: "#111", color: "#fff", border: "1px solid #333", borderRadius: "8px", fontFamily: "monospace", fontSize: "12px" }}
+    />
+    <button
+      onClick={fetchGithubCode}
+      style={{ padding: "0.75rem 1rem", background: "#333", color: "#fff", border: "1px solid #444", borderRadius: "8px", cursor: "pointer", fontFamily: "monospace", fontSize: "12px", whiteSpace: "nowrap" }}>
+      📥 Load
+    </button>
+  </div>
+  {githubError && (
+    <p style={{ color: githubError.includes("✅") ? "#00ff88" : "#ff4444", fontSize: "12px", margin: "4px 0 0" }}>
+      {githubError}
+    </p>
+  )}
+</div>
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ color: "#555", fontSize: "12px", letterSpacing: "1px" }}>
               {tab === "bughunt" ? "YOUR CODE (OPTIONAL)" : "PASTE YOUR CODE"}
