@@ -171,6 +171,15 @@ def review_code(code: str):
     </div>
   );
 };
+const detectLanguage = (code) => {
+  if (code.includes("def ") || code.includes("import ") && !code.includes("function")) return "python";
+  if (code.includes("function") || code.includes("const ") || code.includes("let ")) return "javascript";
+  if (code.includes("public class") || code.includes("System.out")) return "java";
+  if (code.includes("#include") || code.includes("cout")) return "c++";
+  if (code.includes("<html>") || code.includes("<div>")) return "html";
+  return "python";
+};
+
 
 export default function App() {
   const [page, setPage] = useState("landing");
@@ -305,7 +314,11 @@ export default function App() {
             <label style={{ color: "#555", fontSize: "12px", letterSpacing: "1px" }}>
               {tab === "bughunt" ? "YOUR CODE (OPTIONAL)" : "PASTE YOUR CODE"}
             </label>
-            <textarea placeholder="Paste your code here..." value={code} onChange={(e) => setCode(e.target.value)}
+            <textarea placeholder="Paste your code here..." value={code} onChange={(e) => {
+  setCode(e.target.value);
+  const detected = detectLanguage(e.target.value);
+  setLanguage(detected);
+}}
               style={{ width: "100%", height: "220px", padding: "1rem", background: "#111", color: "#00ff88", border: "1px solid #222", borderRadius: "8px", fontFamily: "monospace", fontSize: "13px", resize: "vertical", boxSizing: "border-box", lineHeight: "1.6", marginTop: "4px" }} />
           </div>
 
