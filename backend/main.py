@@ -64,3 +64,26 @@ def generate_docs(input: DocInput):
         }]
     )
     return {"documentation": response.choices[0].message.content}
+class ComplexityInput(BaseModel):
+    code: str
+    language: str = "python"
+
+@app.post("/complexity")
+def analyze_complexity(input: ComplexityInput):
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{
+            "role": "user",
+            "content": f"""Analyze the time and space complexity of this {input.language} code:
+
+{input.code}
+
+Provide:
+1. Time Complexity (Big O notation)
+2. Space Complexity (Big O notation)
+3. Why this complexity?
+4. How to optimize it?
+5. Optimized version of the code"""
+        }]
+    )
+    return {"complexity": response.choices[0].message.content}
