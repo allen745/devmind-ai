@@ -206,14 +206,15 @@ export default function App() {
       let body, endpoint;
       if (tab === "review") { endpoint = "/review"; body = { code, language }; }
       else if (tab === "bughunt") { endpoint = "/bughunt"; body = { error, code, language }; }
-      else { endpoint = "/devdocs"; body = { code, doc_type: docType, language }; }
+else if (tab === "complexity") { endpoint = "/complexity"; body = { code, language }; }
+else { endpoint = "/devdocs"; body = { code, doc_type: docType, language }; }
       const res = await fetch(API + endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      const rawText = data.review || data.solution || data.documentation;
+      const rawText = data.review || data.solution || data.documentation || data.complexity;
       setSections(formatOutput(rawText, tab));
     } catch (e) {
       setSections([{ type: "raw", content: "Error connecting to API!" }]);
@@ -268,6 +269,7 @@ export default function App() {
             { id: "review", icon: "🔍", label: "Code Review", desc: "Review & score your code", color: "#00ff88" },
             { id: "bughunt", icon: "🐛", label: "Bug Hunt", desc: "Find & fix bugs instantly", color: "#ff4444" },
             { id: "devdocs", icon: "📚", label: "Dev Docs", desc: "Generate documentation", color: "#4488ff" },
+            { id: "complexity", icon: "⚡", label: "Complexity", desc: "Analyze time & space complexity", color: "#ffff00" },
           ].map((t) => (
             <div key={t.id} onClick={() => { setTab(t.id); setSections([]); }}
               style={{ padding: window.innerWidth < 768 ? "0.5rem 1rem" : "1rem", borderRadius: "10px", marginBottom: window.innerWidth < 768 ? "0" : "0.75rem", cursor: "pointer", background: tab === t.id ? `${t.color}15` : "transparent", border: `1px solid ${tab === t.id ? t.color : "#222"}`, transition: "all 0.2s", display: "flex", flexDirection: window.innerWidth < 768 ? "row" : "column", alignItems: "center", gap: "0.5rem", whiteSpace: "nowrap" }}>
