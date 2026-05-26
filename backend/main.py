@@ -112,4 +112,4 @@ Commit:
 Description:"""
         }]
     )
-    return {{"commit": response.choices[0].message.content}}
+    return {"commit": response.choices[0].message.content}
