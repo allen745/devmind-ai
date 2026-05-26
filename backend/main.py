@@ -87,3 +87,29 @@ Provide:
         }]
     )
     return {"complexity": response.choices[0].message.content}
+
+class CommitInput(BaseModel):
+    code: str
+    language: str = "python"
+
+@app.post("/commit")
+def generate_commit(input: CommitInput):
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{
+            "role": "user",
+            "content": f"""Analyze this {input.language} code and generate:
+1. A concise git commit message (conventional commits format)
+2. A detailed description
+3. Type of change (feat/fix/refactor/docs/test)
+
+Code:
+{input.code}
+
+Format:
+Type: 
+Commit: 
+Description:"""
+        }]
+    )
+    return {{"commit": response.choices[0].message.content}}
