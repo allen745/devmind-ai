@@ -29,3 +29,4 @@ https://devmind-ai-topaz.vercel.app/
 
 ## Developer
 Allen Christian — AI & Full Stack Developer | Patent Holder
+https://www.linkedin.com/in/allen-christian-708545409/
