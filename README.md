@@ -28,5 +28,6 @@ Python, JavaScript, Java, C++, HTML/CSS
 https://devmind-ai-topaz.vercel.app/ 
 
 ## Developer
-Allen Christian — AI & Full Stack Developer | Patent Holder
+Allen Christian — ML & AI Developer | Patent Holder
+ 
 https://www.linkedin.com/in/allen-christian-708545409/
