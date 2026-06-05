@@ -131,14 +131,17 @@ def review_code(code: str):
           <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px", letterSpacing: "3px", marginBottom: "1rem", textTransform: "uppercase" }}>
             Introducing &nbsp;•&nbsp; <span style={{ color: "#fff", fontWeight: "bold" }}>Your AI Dev Partner</span>
           </p>
-          <h1 style={{ fontSize: "clamp(3rem, 8vw, 6re m)", fontWeight: "900", color: "#fff", margin: "0 0 1.5rem", lineHeight: "1", letterSpacing: "-2px", fontFamily: "Arial Black, sans-serif" }}>
+          <h1 style={{ fontSize: "clamp(3rem, 8vw, 6rem)", fontWeight: "900", color: "#fff", margin: "0 0 1.5rem", lineHeight: "1", letterSpacing: "-2px", fontFamily: "Arial Black, sans-serif" }}>
             DEVMIND<br />AI
           </h1>
           <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "1.2rem", lineHeight: "1.6", marginBottom: "2.5rem", maxWidth: "450px" }}>
-            The AI-Powered Platform for Developer Productivity
-          </p>
+  The AI-Powered Platform for Developer Productivity
+</p>
+<p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem", maxWidth: "450px", padding: "0.75rem 1rem", background: "rgba(255,255,255,0.1)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.2)" }}>
+  🔗 <strong style={{ color: "#fff" }}>Direct GitHub Access</strong> — Paste any GitHub file URL and analyze code instantly, no copy-paste needed.
+</p>
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "3rem" }}>
-            {["🔍 Code Review", "🐛 Bug Hunt", "📚 Dev Docs"].map((f) => (
+            {["🔍 Code Review", "🐛 Bug Hunt", "📚 Dev Docs", "⚡ Complexity", "🔀 Git Commit"].map((f) => (
               <span key={f} style={{ padding: "0.4rem 1rem", background: "rgba(255,255,255,0.15)", borderRadius: "20px", color: "#fff", fontSize: "13px", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.2)" }}>{f}</span>
             ))}
           </div>
