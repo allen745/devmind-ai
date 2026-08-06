@@ -97,11 +97,11 @@ const IconCheck = () => (
 );
 
 const TOOLS = [
-  { id: "review", label: "Code Review", desc: "Score quality, bugs, and security", color: "#0d7377", Icon: IconReview },
-  { id: "bughunt", label: "Bug Hunt", desc: "Trace errors to a concrete fix", color: "#d64545", Icon: IconBug },
-  { id: "devdocs", label: "Dev Docs", desc: "Generate README, API, comments", color: "#2f6fed", Icon: IconDocs },
-  { id: "complexity", label: "Complexity", desc: "Estimate time and space cost", color: "#c27803", Icon: IconZap },
-  { id: "commit", label: "Git Commit", desc: "Craft clear commit messages", color: "#0f9f6e", Icon: IconCommit },
+  { id: "review", label: "Code Review", short: "Review", desc: "Score quality, bugs, and security", color: "#0d7377", Icon: IconReview },
+  { id: "bughunt", label: "Bug Hunt", short: "Bugs", desc: "Trace errors to a concrete fix", color: "#d64545", Icon: IconBug },
+  { id: "devdocs", label: "Dev Docs", short: "Docs", desc: "Generate README, API, comments", color: "#2f6fed", Icon: IconDocs },
+  { id: "complexity", label: "Complexity", short: "Big-O", desc: "Estimate time and space cost", color: "#c27803", Icon: IconZap },
+  { id: "commit", label: "Git Commit", short: "Commit", desc: "Craft clear commit messages", color: "#0f9f6e", Icon: IconCommit },
 ];
 
 const HERO_CODE = `from fastapi import FastAPI
@@ -223,7 +223,7 @@ const LandingPage = ({ onStart }) => (
   <div className="landing">
     <nav className="landing-nav fade-up">
       <div className="brand-mark">
-        DEVMIND<span>AI</span>
+        DEVMIND<span className="ai">AI</span>
       </div>
       <button type="button" className="btn btn-ghost" onClick={onStart}>
         Sign in
@@ -242,7 +242,7 @@ const LandingPage = ({ onStart }) => (
 
       <div className="hero-content">
         <h1 className="brand-mark hero-brand fade-up">
-          DEVMIND<span>AI</span>
+          DEVMIND<span className="ai">AI</span>
         </h1>
         <p className="hero-headline fade-up fade-up-delay-1">
           Ship cleaner code with an AI pair that reviews, debugs, and documents.
@@ -321,7 +321,7 @@ const SignInPage = ({ onSuccess, onBack }) => (
   <div className="signin">
     <aside className="signin-visual">
       <div className="brand-mark fade-up">
-        DEVMIND<span>AI</span>
+        DEVMIND<span className="ai">AI</span>
       </div>
       <div className="signin-visual-copy fade-up fade-up-delay-1">
         <h2>Your AI workspace for sharper shipping.</h2>
@@ -513,7 +513,7 @@ export default function App() {
         <div className="dashboard">
           <header className="dash-header">
             <button type="button" className="brand-mark dash-brand" onClick={() => setPage("landing")}>
-              DEVMIND<span>AI</span>
+              DEVMIND<span className="ai">AI</span>
             </button>
             {user && (
               <div className="dash-user">
@@ -562,7 +562,7 @@ export default function App() {
                         setSections([]);
                       }}
                     >
-                      {t.label}
+                      {t.short}
                     </button>
                   ))}
                 </div>
