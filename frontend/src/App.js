@@ -1,32 +1,31 @@
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { GoogleOAuthProvider, GoogleLogin, googleLogout } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
+import "./App.css";
 
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
-// Add to .env: REACT_APP_GOOGLE_CLIENT_ID=your_client_id_here
 const GOOGLE_CLIENT_ID = "492920890631-bjujpdf9npihuo6hrklipdu382dq4pkk.apps.googleusercontent.com";
 const API = "https://devmind-ai-sata.onrender.com";
 
-// ─── HOOKS ────────────────────────────────────────────────────────────────────
 const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 860 : false
+  );
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768);
+    const handler = () => setIsMobile(window.innerWidth < 860);
     window.addEventListener("resize", handler);
     return () => window.removeEventListener("resize", handler);
   }, []);
   return isMobile;
 };
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
 const getScoreColor = (score) => {
-  if (score >= 91) return "#00ff88";
-  if (score >= 71) return "#ffff00";
-  if (score >= 41) return "#ff8800";
-  return "#ff4444";
+  if (score >= 91) return "#0f9f6e";
+  if (score >= 71) return "#14919b";
+  if (score >= 41) return "#c27803";
+  return "#d64545";
 };
 
 const detectLanguage = (code) => {
@@ -56,75 +55,163 @@ const formatOutput = (text, tab) => {
   return sections.length > 0 ? sections : [{ type: "raw", content: text }];
 };
 
-// ─── CODE BLOCK ───────────────────────────────────────────────────────────────
+const IconReview = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M4 5.5h16M4 12h10M4 18.5h7" strokeLinecap="round" />
+    <circle cx="17.5" cy="17" r="3.5" />
+    <path d="M20 19.5 22 21.5" strokeLinecap="round" />
+  </svg>
+);
+
+const IconBug = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M8 9.5a4 4 0 0 1 8 0v6a4 4 0 0 1-8 0v-6Z" />
+    <path d="M12 5.5V3.5M8 12H4.5M19.5 12H16M7 7 5 5M17 7l2-2M7 17l-2 2M17 17l2 2" strokeLinecap="round" />
+  </svg>
+);
+
+const IconDocs = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M7 3.5h7l4 4V20.5H7V3.5Z" />
+    <path d="M14 3.5v4h4M9.5 12h5M9.5 15.5h5" strokeLinecap="round" />
+  </svg>
+);
+
+const IconZap = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M13 3.5 6.5 13.5H12l-1 7 6.5-10H12L13 3.5Z" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconCommit = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <circle cx="12" cy="12" r="3.2" />
+    <path d="M12 4v4.5M12 15.5V20" strokeLinecap="round" />
+  </svg>
+);
+
+const IconCheck = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M5 12.5 10 17.5 19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const TOOLS = [
+  { id: "review", label: "Code Review", desc: "Score quality, bugs, and security", color: "#0d7377", Icon: IconReview },
+  { id: "bughunt", label: "Bug Hunt", desc: "Trace errors to a concrete fix", color: "#d64545", Icon: IconBug },
+  { id: "devdocs", label: "Dev Docs", desc: "Generate README, API, comments", color: "#2f6fed", Icon: IconDocs },
+  { id: "complexity", label: "Complexity", desc: "Estimate time and space cost", color: "#c27803", Icon: IconZap },
+  { id: "commit", label: "Git Commit", desc: "Craft clear commit messages", color: "#0f9f6e", Icon: IconCommit },
+];
+
+const HERO_CODE = `from fastapi import FastAPI
+from groq import Groq
+import os
+
+app = FastAPI()
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+@app.post("/review")
+def review_code(code: str):
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": f"Review: {code}"}]
+    )
+    return {"review": response.choices[0].message.content}`;
+
 const CodeBlock = ({ code }) => (
   <SyntaxHighlighter
     language="python"
-    style={dracula}
-    customStyle={{ borderRadius: "8px", fontSize: "13px" }}
+    style={oneDark}
+    customStyle={{
+      borderRadius: "10px",
+      fontSize: "13px",
+      margin: 0,
+      background: "#0b1220",
+    }}
   >
     {code}
   </SyntaxHighlighter>
 );
 
-// ─── RESULT CARD ──────────────────────────────────────────────────────────────
 const ResultCard = ({ sections }) => {
   if (!sections || sections.length === 0) return null;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+    <div className="result-stack">
       {sections.map((s, i) => {
         if (s.type === "score") {
-          const score = parseInt(s.content);
+          const score = parseInt(s.content, 10);
           const color = getScoreColor(score);
           return (
-            <div key={i} style={{ background: "#111", border: `2px solid ${color}`, borderRadius: "12px", padding: "1.5rem", textAlign: "center" }}>
-              <p style={{ color: "#888", margin: "0 0 8px", fontSize: "14px", letterSpacing: "2px" }}>CODE QUALITY SCORE</p>
-              <p style={{ color: color, fontSize: "4rem", fontWeight: "bold", margin: "0" }}>
-                {score}<span style={{ fontSize: "1.5rem", color: "#888" }}>/100</span>
+            <div key={i} className="result-block score-block" style={{ "--score-color": color }}>
+              <p className="label">Code quality score</p>
+              <p className="value">
+                {score}
+                <span>/100</span>
               </p>
             </div>
           );
         }
-        if (s.type === "bugs") return (
-          <div key={i} style={{ background: "#1a0000", border: "1px solid #ff4444", borderRadius: "12px", padding: "1.5rem" }}>
-            <h3 style={{ color: "#ff4444", margin: "0 0 12px" }}>🐛 Bugs Found</h3>
-            <div style={{ color: "#ffcccc", fontSize: "14px", lineHeight: "1.6" }}><ReactMarkdown>{s.content}</ReactMarkdown></div>
-          </div>
-        );
-        if (s.type === "security") return (
-          <div key={i} style={{ background: "#1a0d00", border: "1px solid #ff8800", borderRadius: "12px", padding: "1.5rem" }}>
-            <h3 style={{ color: "#ff8800", margin: "0 0 12px" }}>🔒 Security Issues</h3>
-            <div style={{ color: "#ffd9aa", fontSize: "14px", lineHeight: "1.6" }}><ReactMarkdown>{s.content}</ReactMarkdown></div>
-          </div>
-        );
-        if (s.type === "recommendations") return (
-          <div key={i} style={{ background: "#00001a", border: "1px solid #4488ff", borderRadius: "12px", padding: "1.5rem" }}>
-            <h3 style={{ color: "#4488ff", margin: "0 0 12px" }}>💡 Recommendations</h3>
-            <div style={{ color: "#aaccff", fontSize: "14px", lineHeight: "1.6" }}><ReactMarkdown>{s.content}</ReactMarkdown></div>
-          </div>
-        );
+        if (s.type === "bugs") {
+          return (
+            <div key={i} className="result-block result-bugs">
+              <h3>Bugs found</h3>
+              <div className="md">
+                <ReactMarkdown>{s.content}</ReactMarkdown>
+              </div>
+            </div>
+          );
+        }
+        if (s.type === "security") {
+          return (
+            <div key={i} className="result-block result-security">
+              <h3>Security issues</h3>
+              <div className="md">
+                <ReactMarkdown>{s.content}</ReactMarkdown>
+              </div>
+            </div>
+          );
+        }
+        if (s.type === "recommendations") {
+          return (
+            <div key={i} className="result-block result-recommendations">
+              <h3>Recommendations</h3>
+              <div className="md">
+                <ReactMarkdown>{s.content}</ReactMarkdown>
+              </div>
+            </div>
+          );
+        }
         if (s.type === "code") {
           const codeMatch = s.content.match(/```(?:\w+)?\n?([\s\S]*?)```/);
           const codeToCopy = codeMatch ? codeMatch[1] : s.content;
           return (
-            <div key={i} style={{ background: "#001a00", border: "1px solid #00ff88", borderRadius: "12px", padding: "1.5rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                <h3 style={{ color: "#00ff88", margin: "0" }}>✅ Fixed Code</h3>
+            <div key={i} className="result-block result-code">
+              <div className="code-result-head">
+                <h3>Fixed code</h3>
                 <button
-                  onClick={() => { navigator.clipboard.writeText(codeToCopy); alert("✅ Code copied!"); }}
-                  style={{ padding: "0.4rem 1rem", background: "#00ff88", color: "#000", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "12px", fontFamily: "monospace" }}
+                  type="button"
+                  className="copy-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(codeToCopy);
+                  }}
                 >
-                  📋 Copy Code
+                  Copy code
                 </button>
               </div>
-              {codeMatch ? <CodeBlock code={codeMatch[1]} /> : <ReactMarkdown>{s.content}</ReactMarkdown>}
+              {codeMatch ? <CodeBlock code={codeMatch[1]} /> : (
+                <div className="md">
+                  <ReactMarkdown>{s.content}</ReactMarkdown>
+                </div>
+              )}
             </div>
           );
         }
-        // raw fallback
         return (
-          <div key={i} style={{ background: "#111", border: "1px solid #333", borderRadius: "12px", padding: "1.5rem" }}>
-            <div style={{ color: "#ccc", fontSize: "14px", lineHeight: "1.6" }}><ReactMarkdown>{s.content}</ReactMarkdown></div>
+          <div key={i} className="result-block">
+            <div className="md">
+              <ReactMarkdown>{s.content}</ReactMarkdown>
+            </div>
           </div>
         );
       })}
@@ -132,130 +219,172 @@ const ResultCard = ({ sections }) => {
   );
 };
 
-// ─── LANDING PAGE ─────────────────────────────────────────────────────────────
-const LandingPage = ({ onStart }) => {
-  const codeSnippet = `from fastapi import FastAPI
-from groq import Groq
-import os
+const LandingPage = ({ onStart }) => (
+  <div className="landing">
+    <nav className="landing-nav fade-up">
+      <div className="brand-mark">
+        DEVMIND<span>AI</span>
+      </div>
+      <button type="button" className="btn btn-ghost" onClick={onStart}>
+        Sign in
+      </button>
+    </nav>
 
-app = FastAPI()
-client = Groq(
-  api_key=os.getenv("GROQ_API_KEY")
-)
-
-@app.post("/review")
-def review_code(code: str):
-  response = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
-    messages=[{
-      "role": "user",
-      "content": f"Review: {code}"
-    }]
-  )
-  return {"review": response}`;
-
-  return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 60%, #c471ed 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Courier New', monospace", padding: "2rem", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "500px", height: "500px", borderRadius: "50%", background: "rgba(255,255,255,0.05)", filter: "blur(60px)" }} />
-      <div style={{ position: "absolute", bottom: "-20%", right: "-10%", width: "600px", height: "600px", borderRadius: "50%", background: "rgba(255,255,255,0.05)", filter: "blur(80px)" }} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "1200px", width: "100%", gap: "4rem", flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: "280px" }}>
-          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px", letterSpacing: "3px", marginBottom: "1rem", textTransform: "uppercase" }}>
-            Introducing &nbsp;•&nbsp; <span style={{ color: "#fff", fontWeight: "bold" }}>Your AI Dev Partner</span>
-          </p>
-          <h1 style={{ fontSize: "clamp(3rem, 8vw, 6rem)", fontWeight: "900", color: "#fff", margin: "0 0 1.5rem", lineHeight: "1", letterSpacing: "-2px", fontFamily: "Arial Black, sans-serif" }}>
-            DEVMIND<br />AI
-          </h1>
-          <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "1.2rem", lineHeight: "1.6", marginBottom: "2.5rem", maxWidth: "450px" }}>
-            The AI-Powered Platform for Developer Productivity
-          </p>
-          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem", maxWidth: "450px", padding: "0.75rem 1rem", background: "rgba(255,255,255,0.1)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.2)" }}>
-            🔗 <strong style={{ color: "#fff" }}>Direct GitHub Access</strong> — Paste any GitHub file URL and analyze code instantly, no copy-paste needed.
-          </p>
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "3rem" }}>
-            {["🔍 Code Review", "🐛 Bug Hunt", "📚 Dev Docs", "⚡ Complexity", "🔀 Git Commit"].map((f) => (
-              <span key={f} style={{ padding: "0.4rem 1rem", background: "rgba(255,255,255,0.15)", borderRadius: "20px", color: "#fff", fontSize: "13px", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.2)" }}>{f}</span>
-            ))}
-          </div>
-          <button onClick={onStart} style={{ padding: "1rem 3rem", background: "#fff", color: "#764ba2", border: "none", borderRadius: "50px", cursor: "pointer", fontWeight: "900", fontSize: "1.1rem", fontFamily: "Arial Black, sans-serif", letterSpacing: "1px", boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
-            Get Started →
-          </button>
-        </div>
-        <div style={{ flex: 1, display: "flex", justifyContent: "center", minWidth: "300px" }}>
-          <div style={{ position: "relative" }}>
-            <div style={{ background: "#1a1a2e", borderRadius: "12px 12px 0 0", padding: "8px", border: "3px solid #333", width: "480px", boxShadow: "0 30px 60px rgba(0,0,0,0.5)" }}>
-              <div style={{ background: "#111", borderRadius: "8px 8px 0 0", padding: "6px 12px", display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
-                <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ff5f57" }} />
-                <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ffbd2e" }} />
-                <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#28ca41" }} />
-                <span style={{ color: "#555", fontSize: "11px", marginLeft: "8px" }}>devmind-ai — main.py</span>
-              </div>
-              <div style={{ background: "#0d1117", borderRadius: "0 0 8px 8px", padding: "1rem", maxHeight: "280px", overflow: "hidden" }}>
-                <SyntaxHighlighter language="python" style={dracula} customStyle={{ background: "transparent", margin: 0, fontSize: "11px", lineHeight: "1.6" }}>
-                  {codeSnippet}
-                </SyntaxHighlighter>
-              </div>
-            </div>
-            <div style={{ background: "#2a2a2a", height: "20px", borderRadius: "0 0 4px 4px", width: "480px" }} />
-            <div style={{ background: "#222", height: "8px", borderRadius: "0 0 20px 20px", width: "520px", marginLeft: "-20px" }} />
-          </div>
+    <section className="hero">
+      <div className="hero-atmosphere" aria-hidden="true">
+        <div className="hero-grid" />
+        <div className="hero-orb hero-orb-a" />
+        <div className="hero-orb hero-orb-b" />
+        <div className="hero-codeplane">
+          <pre>{`${HERO_CODE}\n\n${HERO_CODE}`}</pre>
         </div>
       </div>
-    </div>
-  );
-};
 
-// ─── SIGN IN PAGE ─────────────────────────────────────────────────────────────
-const SignInPage = ({ onSuccess }) => (
-  <div style={{ minHeight: "100vh", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Courier New', monospace", backgroundImage: "radial-gradient(circle at 1px 1px, #1a1a1a 1px, transparent 0)", backgroundSize: "40px 40px" }}>
-    <div style={{ background: "#111", border: "1px solid #222", borderRadius: "16px", padding: "3rem", maxWidth: "420px", width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
-      <h1 style={{ color: "#00ff88", fontSize: "2rem", margin: "0 0 0.5rem", letterSpacing: "2px" }}>🧠 DEVMIND AI</h1>
-      <p style={{ color: "#555", fontSize: "12px", letterSpacing: "2px", margin: "0 0 2.5rem" }}>THE AI PLATFORM FOR DEVELOPERS</p>
-      <div style={{ borderTop: "1px solid #222", marginBottom: "2.5rem" }} />
-      <h2 style={{ color: "#fff", fontSize: "1.3rem", margin: "0 0 0.5rem", fontWeight: "bold" }}>Welcome Back</h2>
-      <p style={{ color: "#555", fontSize: "13px", margin: "0 0 2rem", lineHeight: "1.6" }}>
-        Sign in with Google to access all tools — Code Review, Bug Hunt, Dev Docs and more.
+      <div className="hero-content">
+        <h1 className="brand-mark hero-brand fade-up">
+          DEVMIND<span>AI</span>
+        </h1>
+        <p className="hero-headline fade-up fade-up-delay-1">
+          Ship cleaner code with an AI pair that reviews, debugs, and documents.
+        </p>
+        <p className="hero-support fade-up fade-up-delay-2">
+          Paste a file or pull one from GitHub. Get a score, fixes, and docs in one workspace.
+        </p>
+        <div className="hero-cta fade-up fade-up-delay-3">
+          <button type="button" className="btn btn-primary" onClick={onStart}>
+            Get started
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section className="landing-section">
+      <p className="section-kicker">Toolkit</p>
+      <h2 className="section-title">Five focused tools. One flow.</h2>
+      <p className="section-copy">
+        Move from review to fix to documentation without leaving the editor.
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem", textAlign: "left" }}>
-        {[
-          { icon: "🔍", text: "Code Review & scoring" },
-          { icon: "🐛", text: "Bug detection & fixing" },
-          { icon: "📚", text: "Documentation generation" },
-          { icon: "⚡", text: "Complexity analysis" },
-          { icon: "🔀", text: "Git commit generation" },
-        ].map((f, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem 0.75rem", background: "#0d0d0d", borderRadius: "8px", border: "1px solid #1a1a1a" }}>
-            <span>{f.icon}</span>
-            <span style={{ color: "#aaa", fontSize: "13px" }}>{f.text}</span>
+      <div className="tools-rail">
+        {TOOLS.map(({ id, label, desc, Icon }) => (
+          <div key={id} className="tool-cell">
+            <div className="tool-icon">
+              <Icon />
+            </div>
+            <h3>{label}</h3>
+            <p>{desc}</p>
           </div>
         ))}
       </div>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <GoogleLogin
-          onSuccess={(credentialResponse) => {
-            const decoded = jwtDecode(credentialResponse.credential);
-            onSuccess({ name: decoded.name, email: decoded.email, picture: decoded.picture });
-          }}
-          onError={() => alert("Sign in failed. Please try again.")}
-          theme="filled_black"
-          size="large"
-          text="signin_with_google"
-          shape="rectangular"
-          width="320"
-        />
+    </section>
+
+    <section className="landing-section" style={{ paddingTop: 0 }}>
+      <div className="feature-split">
+        <div>
+          <p className="section-kicker">GitHub access</p>
+          <h2 className="section-title">Analyze from a file URL.</h2>
+          <p className="section-copy">
+            Drop a GitHub blob link into the workspace. DevMind loads the source so you can review without copy-paste.
+          </p>
+          <button type="button" className="btn btn-accent" onClick={onStart}>
+            Open workspace
+          </button>
+        </div>
+        <div className="feature-visual">
+          <div className="feature-visual-top">
+            <span className="dot" />
+            <span className="dot" />
+            <span className="dot live" />
+            <span>github.com / allen745 / main.py</span>
+          </div>
+          <pre>{`# Loaded from GitHub
+POST /review
+language: python
+score: 88/100
+
+security:
+  - avoid hardcoding secrets
+recommendations:
+  - type the request body
+  - add structured logging`}</pre>
+        </div>
       </div>
-      <p style={{ color: "#333", fontSize: "11px", marginTop: "1.5rem" }}>
-        By signing in, you agree to use DevMind AI responsibly.
-      </p>
-    </div>
+    </section>
+
+    <footer className="landing-footer">
+      DevMind AI — built for developers who want signal, not noise.
+    </footer>
   </div>
 );
 
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+const SignInPage = ({ onSuccess, onBack }) => (
+  <div className="signin">
+    <aside className="signin-visual">
+      <div className="brand-mark fade-up">
+        DEVMIND<span>AI</span>
+      </div>
+      <div className="signin-visual-copy fade-up fade-up-delay-1">
+        <h2>Your AI workspace for sharper shipping.</h2>
+        <p>
+          Sign in once. Keep reviews, bug hunts, docs, and commit drafts in a single calm dashboard.
+        </p>
+      </div>
+      <pre className="signin-code fade-up fade-up-delay-2">{`review → score + fixes
+bughunt → root cause
+devdocs → README / API
+complexity → Big-O
+commit → message draft`}</pre>
+    </aside>
+
+    <main className="signin-panel">
+      <div className="signin-card fade-up">
+        <h1>Welcome back</h1>
+        <p>Continue with Google to unlock the full DevMind toolkit.</p>
+
+        <div className="signin-benefits">
+          {[
+            "Code review with a quality score",
+            "Bug hunting from real error traces",
+            "Docs, complexity, and commit help",
+          ].map((text) => (
+            <div key={text} className="signin-benefit">
+              <IconCheck />
+              <span>{text}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="signin-google">
+          <GoogleLogin
+            onSuccess={(credentialResponse) => {
+              const decoded = jwtDecode(credentialResponse.credential);
+              onSuccess({
+                name: decoded.name,
+                email: decoded.email,
+                picture: decoded.picture,
+              });
+            }}
+            onError={() => alert("Sign in failed. Please try again.")}
+            theme="outline"
+            size="large"
+            text="signin_with"
+            shape="pill"
+            width="320"
+          />
+        </div>
+
+        <p className="signin-note">By signing in, you agree to use DevMind AI responsibly.</p>
+        <button type="button" className="signin-back" onClick={onBack}>
+          ← Back to landing
+        </button>
+      </div>
+    </main>
+  </div>
+);
+
 export default function App() {
   const isMobile = useIsMobile();
 
-  // ── FIX 1: Session-persistent user ──
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem("devmind_user");
@@ -265,7 +394,6 @@ export default function App() {
     }
   });
 
-  // ── Auto-restore page on refresh ──
   const [page, setPage] = useState(() => {
     try {
       const saved = localStorage.getItem("devmind_user");
@@ -286,18 +414,16 @@ export default function App() {
   const [githubUrl, setGithubUrl] = useState("");
   const [githubError, setGithubError] = useState("");
 
-  // ── FIX 1: Persist on sign in ──
   const handleSignIn = (userData) => {
     try {
       localStorage.setItem("devmind_user", JSON.stringify(userData));
     } catch {
-      // localStorage unavailable — continue without persistence
+      // continue without persistence
     }
     setUser(userData);
     setPage("app");
   };
 
-  // ── FIX 1: Clear on sign out ──
   const handleSignOut = () => {
     googleLogout();
     try {
@@ -313,15 +439,27 @@ export default function App() {
     setLoading(true);
     setSections([]);
     const dotsInterval = setInterval(() => {
-      setDots((prev) => (prev.length >= 3 ? "" : prev + "●"));
-    }, 500);
+      setDots((prev) => (prev.length >= 3 ? "" : `${prev}.`));
+    }, 400);
     try {
-      let body, endpoint;
-      if (tab === "review")         { endpoint = "/review";    body = { code, language }; }
-      else if (tab === "bughunt")   { endpoint = "/bughunt";   body = { error, code, language }; }
-      else if (tab === "complexity"){ endpoint = "/complexity"; body = { code, language }; }
-      else if (tab === "commit")    { endpoint = "/commit";    body = { code, language }; }
-      else                          { endpoint = "/devdocs";   body = { code, doc_type: docType, language }; }
+      let body;
+      let endpoint;
+      if (tab === "review") {
+        endpoint = "/review";
+        body = { code, language };
+      } else if (tab === "bughunt") {
+        endpoint = "/bughunt";
+        body = { error, code, language };
+      } else if (tab === "complexity") {
+        endpoint = "/complexity";
+        body = { code, language };
+      } else if (tab === "commit") {
+        endpoint = "/commit";
+        body = { code, language };
+      } else {
+        endpoint = "/devdocs";
+        body = { code, doc_type: docType, language };
+      }
 
       const res = await fetch(API + endpoint, {
         method: "POST",
@@ -357,154 +495,187 @@ export default function App() {
       if (!res.ok) throw new Error("Could not fetch file!");
       const text = await res.text();
       setCode(text);
-      setGithubError("✅ Code loaded from GitHub!");
+      setGithubError("ok:Code loaded from GitHub.");
     } catch {
-      setGithubError("❌ Invalid URL! Paste a direct file link.");
+      setGithubError("err:Invalid URL. Paste a direct GitHub file link.");
     }
   };
 
-  const TOOLS = [
-    { id: "review",     icon: "🔍", label: "Code Review", desc: "Review & score your code",       color: "#00ff88" },
-    { id: "bughunt",    icon: "🐛", label: "Bug Hunt",    desc: "Find & fix bugs instantly",       color: "#ff4444" },
-    { id: "devdocs",    icon: "📚", label: "Dev Docs",    desc: "Generate documentation",          color: "#4488ff" },
-    { id: "complexity", icon: "⚡", label: "Complexity",  desc: "Analyze time & space complexity", color: "#ffff00" },
-    { id: "commit",     icon: "🔀", label: "Git Commit",  desc: "Generate commit messages",        color: "#ff8800" },
-  ];
-
-  const activeToolColor = TOOLS.find((t) => t.id === tab)?.color ?? "#00ff88";
+  const activeTool = TOOLS.find((t) => t.id === tab) ?? TOOLS[0];
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       {page === "landing" && <LandingPage onStart={() => setPage("signin")} />}
-      {page === "signin" && <SignInPage onSuccess={handleSignIn} />}
+      {page === "signin" && (
+        <SignInPage onSuccess={handleSignIn} onBack={() => setPage("landing")} />
+      )}
       {page === "app" && (
-        <div style={{ background: "#0a0a0a", minHeight: "100vh", color: "#fff", fontFamily: "'Courier New', monospace", backgroundImage: "radial-gradient(circle at 1px 1px, #1a1a1a 1px, transparent 0)", backgroundSize: "40px 40px" }}>
-
-          {/* Header */}
-          <div style={{ background: "#111", borderBottom: "1px solid #222", padding: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-            <h1 style={{ color: "#00ff88", margin: 0, fontSize: "1.5rem", letterSpacing: "2px", cursor: "pointer" }} onClick={() => setPage("landing")}>
-              🧠 DEVMIND AI
-            </h1>
+        <div className="dashboard">
+          <header className="dash-header">
+            <button type="button" className="brand-mark dash-brand" onClick={() => setPage("landing")}>
+              DEVMIND<span>AI</span>
+            </button>
             {user && (
-              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <img src={user.picture} alt={user.name} style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #00ff88" }} />
-                <span style={{ color: "#aaa", fontSize: "13px" }}>{user.name}</span>
-                <button onClick={handleSignOut} style={{ padding: "0.4rem 1rem", background: "transparent", color: "#ff4444", border: "1px solid #ff4444", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontFamily: "monospace" }}>
-                  Sign Out
+              <div className="dash-user">
+                <img src={user.picture} alt={user.name} />
+                <span>{user.name}</span>
+                <button type="button" className="btn-signout" onClick={handleSignOut}>
+                  Sign out
                 </button>
               </div>
             )}
-          </div>
+          </header>
 
-          {/* Body */}
-          <div style={{ display: "flex", minHeight: "calc(100vh - 60px)", flexDirection: isMobile ? "column" : "row" }}>
-
-            {/* Sidebar */}
-            <div style={{ width: isMobile ? "100%" : "220px", background: "#111", borderRight: isMobile ? "none" : "1px solid #222", borderBottom: isMobile ? "1px solid #222" : "none", padding: "1rem", display: "flex", flexDirection: isMobile ? "row" : "column", gap: "0.5rem", flexShrink: 0, overflowX: isMobile ? "auto" : "unset" }}>
-              {!isMobile && (
-                <p style={{ color: "#555", fontSize: "11px", letterSpacing: "2px", marginBottom: "1.5rem" }}>TOOLS</p>
-              )}
+          <div className="dash-body">
+            <aside className="dash-sidebar">
+              <p className="sidebar-label">Tools</p>
               {TOOLS.map((t) => (
-                <div key={t.id} onClick={() => { setTab(t.id); setSections([]); }}
-                  style={{ padding: isMobile ? "0.5rem 1rem" : "1rem", borderRadius: "10px", marginBottom: isMobile ? "0" : "0.75rem", cursor: "pointer", background: tab === t.id ? `${t.color}15` : "transparent", border: `1px solid ${tab === t.id ? t.color : "#222"}`, transition: "all 0.2s", display: "flex", flexDirection: isMobile ? "row" : "column", alignItems: "center", gap: "0.5rem", whiteSpace: "nowrap" }}>
-                  <div style={{ fontSize: "1.2rem" }}>{t.icon}</div>
-                  <p style={{ color: tab === t.id ? t.color : "#fff", fontWeight: "bold", margin: "0", fontSize: "13px" }}>{t.label}</p>
-                  {!isMobile && <p style={{ color: "#555", fontSize: "11px", margin: 0, lineHeight: "1.4" }}>{t.desc}</p>}
-                </div>
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`tool-btn${tab === t.id ? " active" : ""}`}
+                  style={{ "--tool-color": t.color }}
+                  onClick={() => {
+                    setTab(t.id);
+                    setSections([]);
+                  }}
+                >
+                  <div className="tool-btn-title">
+                    <t.Icon />
+                    {t.label}
+                  </div>
+                  <p>{t.desc}</p>
+                </button>
               ))}
-            </div>
+            </aside>
 
-            {/* Main Content */}
-            <div style={{ flex: 1, padding: isMobile ? "1rem" : "2rem", width: "100%", boxSizing: "border-box" }}>
-
-              {/* Bug Hunt error input */}
-              {tab === "bughunt" && (
-                <div style={{ marginBottom: "1rem" }}>
-                  <label style={{ color: "#ff4444", fontSize: "12px", letterSpacing: "1px" }}>ERROR MESSAGE</label>
-                  <input placeholder="Paste your error message here..." value={error} onChange={(e) => setError(e.target.value)}
-                    style={{ width: "100%", padding: "1rem", background: "#1a0000", color: "#ff4444", border: "1px solid #ff4444", borderRadius: "8px", marginTop: "4px", fontFamily: "monospace", fontSize: "13px", boxSizing: "border-box" }} />
+            <main className="dash-main">
+              {isMobile && (
+                <div className="mobile-tools">
+                  {TOOLS.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`mobile-tool${tab === t.id ? " active" : ""}`}
+                      onClick={() => {
+                        setTab(t.id);
+                        setSections([]);
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
               )}
 
-              {/* GitHub URL */}
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ color: "#555", fontSize: "12px", letterSpacing: "1px" }}>GITHUB FILE URL (OPTIONAL)</label>
-                <div style={{ display: "flex", gap: "0.5rem", marginTop: "4px" }}>
-                  <input placeholder="https://github.com/user/repo/blob/main/file.py" value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)}
-                    style={{ flex: 1, padding: "0.75rem", background: "#111", color: "#fff", border: "1px solid #333", borderRadius: "8px", fontFamily: "monospace", fontSize: "12px" }} />
-                  <button onClick={fetchGithubCode} style={{ padding: "0.75rem 1rem", background: "#333", color: "#fff", border: "1px solid #444", borderRadius: "8px", cursor: "pointer", fontFamily: "monospace", fontSize: "12px", whiteSpace: "nowrap" }}>
-                    📥 Load
+              <div className="workspace-title">
+                <div>
+                  <h2>{activeTool.label}</h2>
+                  <p>{activeTool.desc}</p>
+                </div>
+              </div>
+
+              {tab === "bughunt" && (
+                <div className="field field-error">
+                  <label>Error message</label>
+                  <input
+                    placeholder="Paste your error message here..."
+                    value={error}
+                    onChange={(e) => setError(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div className="field">
+                <label>GitHub file URL (optional)</label>
+                <div className="inline-row">
+                  <input
+                    placeholder="https://github.com/user/repo/blob/main/file.py"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                  />
+                  <button type="button" className="btn-secondary" onClick={fetchGithubCode}>
+                    Load
                   </button>
                 </div>
                 {githubError && (
-                  <p style={{ color: githubError.includes("✅") ? "#00ff88" : "#ff4444", fontSize: "12px", margin: "4px 0 0" }}>{githubError}</p>
+                  <p className={`field-hint ${githubError.startsWith("ok:") ? "ok" : "err"}`}>
+                    {githubError.replace(/^(ok|err):/, "")}
+                  </p>
                 )}
               </div>
 
-              {/* Code textarea */}
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ color: "#555", fontSize: "12px", letterSpacing: "1px" }}>
-                  {tab === "bughunt" ? "YOUR CODE (OPTIONAL)" : "PASTE YOUR CODE"}
-                </label>
+              <div className="field">
+                <label>{tab === "bughunt" ? "Your code (optional)" : "Paste your code"}</label>
                 <textarea
                   placeholder="Paste your code here..."
                   value={code}
-                  onChange={(e) => { setCode(e.target.value); setLanguage(detectLanguage(e.target.value)); }}
-                  style={{ width: "100%", height: "220px", padding: "1rem", background: "#111", color: "#00ff88", border: "1px solid #222", borderRadius: "8px", fontFamily: "monospace", fontSize: "13px", resize: "vertical", boxSizing: "border-box", lineHeight: "1.6", marginTop: "4px" }}
+                  onChange={(e) => {
+                    setCode(e.target.value);
+                    setLanguage(detectLanguage(e.target.value));
+                  }}
                 />
               </div>
 
-              {/* Controls */}
-              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "flex-end" }}>
-                <div>
-                  <label style={{ color: "#555", fontSize: "11px", display: "block", marginBottom: "4px" }}>LANGUAGE</label>
-                  <select value={language} onChange={(e) => setLanguage(e.target.value)}
-                    style={{ padding: "0.5rem 1rem", background: "#111", color: "#fff", border: "1px solid #333", borderRadius: "8px", fontFamily: "monospace" }}>
+              <div className="controls">
+                <div className="field">
+                  <label>Language</label>
+                  <select value={language} onChange={(e) => setLanguage(e.target.value)}>
                     {["python", "javascript", "java", "c++", "html", "css"].map((l) => (
-                      <option key={l} value={l}>{l.toUpperCase()}</option>
+                      <option key={l} value={l}>
+                        {l.toUpperCase()}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 {tab === "devdocs" && (
-                  <div>
-                    <label style={{ color: "#555", fontSize: "11px", display: "block", marginBottom: "4px" }}>DOC TYPE</label>
-                    <select value={docType} onChange={(e) => setDocType(e.target.value)}
-                      style={{ padding: "0.5rem 1rem", background: "#111", color: "#fff", border: "1px solid #333", borderRadius: "8px", fontFamily: "monospace" }}>
+                  <div className="field">
+                    <label>Doc type</label>
+                    <select value={docType} onChange={(e) => setDocType(e.target.value)}>
                       {["readme", "api", "comments"].map((d) => (
-                        <option key={d} value={d}>{d.toUpperCase()}</option>
+                        <option key={d} value={d}>
+                          {d.toUpperCase()}
+                        </option>
                       ))}
                     </select>
                   </div>
                 )}
 
-                <div>
-                  <label style={{ color: "#555", fontSize: "11px", display: "block", marginBottom: "4px" }}>UPLOAD</label>
-                  <label style={{ padding: "0.5rem 1rem", background: "#111", border: "1px solid #333", borderRadius: "8px", cursor: "pointer", fontSize: "13px", display: "block", fontFamily: "monospace" }}>
-                    📁 Upload File
-                    <input type="file" accept=".py,.js,.ts,.html,.css,.java,.cpp,.go,.rs" onChange={handleFile} style={{ display: "none" }} />
+                <div className="field">
+                  <label>Upload</label>
+                  <label className="upload-btn">
+                    Choose file
+                    <input
+                      type="file"
+                      accept=".py,.js,.ts,.html,.css,.java,.cpp,.go,.rs"
+                      onChange={handleFile}
+                      style={{ display: "none" }}
+                    />
                   </label>
                 </div>
 
-                <div style={{ marginLeft: "auto" }}>
-                  <label style={{ color: "#555", fontSize: "11px", display: "block", marginBottom: "4px" }}>ACTION</label>
-                  <button onClick={analyze} disabled={loading}
-                    style={{ padding: "0.5rem 2rem", background: loading ? "#333" : activeToolColor, color: loading ? "#666" : "#000", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "15px", fontFamily: "monospace", letterSpacing: "1px", transition: "background 0.2s" }}>
-                    {loading ? `⏳ Analyzing${dots}` : "Analyze →"}
+                <div className="field action">
+                  <label>Action</label>
+                  <button
+                    type="button"
+                    className="btn btn-accent"
+                    onClick={analyze}
+                    disabled={loading}
+                    style={{ background: activeTool.color }}
+                  >
+                    {loading ? `Analyzing${dots}` : "Analyze →"}
                   </button>
                 </div>
               </div>
 
-              {/* Results */}
               {sections.length > 0 && (
-                <div>
-                  <div style={{ color: "#555", fontSize: "12px", letterSpacing: "1px", marginBottom: "1rem", borderTop: "1px solid #222", paddingTop: "1rem" }}>
-                    ANALYSIS RESULTS
-                  </div>
+                <div className="results-wrap">
+                  <div className="results-label">Analysis results</div>
                   <ResultCard sections={sections} />
                 </div>
               )}
-            </div>
+            </main>
           </div>
         </div>
       )}
