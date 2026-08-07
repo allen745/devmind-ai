@@ -97,11 +97,11 @@ const IconCheck = () => (
 );
 
 const TOOLS = [
-  { id: "review", label: "Code Review", desc: "Score quality, bugs, and security", color: "#0d7377", Icon: IconReview },
-  { id: "bughunt", label: "Bug Hunt", desc: "Trace errors to a concrete fix", color: "#d64545", Icon: IconBug },
-  { id: "devdocs", label: "Dev Docs", desc: "Generate README, API, comments", color: "#2f6fed", Icon: IconDocs },
-  { id: "complexity", label: "Complexity", desc: "Estimate time and space cost", color: "#c27803", Icon: IconZap },
-  { id: "commit", label: "Git Commit", desc: "Craft clear commit messages", color: "#0f9f6e", Icon: IconCommit },
+  { id: "review", label: "Code Review", short: "Review", desc: "Score quality, bugs, and security", color: "#0d7377", Icon: IconReview },
+  { id: "bughunt", label: "Bug Hunt", short: "Bugs", desc: "Trace errors to a concrete fix", color: "#d64545", Icon: IconBug },
+  { id: "devdocs", label: "Dev Docs", short: "Docs", desc: "Generate README, API, comments", color: "#2f6fed", Icon: IconDocs },
+  { id: "complexity", label: "Complexity", short: "Big-O", desc: "Estimate time and space cost", color: "#c27803", Icon: IconZap },
+  { id: "commit", label: "Git Commit", short: "Commit", desc: "Craft clear commit messages", color: "#0f9f6e", Icon: IconCommit },
 ];
 
 const HERO_CODE = `from fastapi import FastAPI
@@ -134,8 +134,27 @@ const CodeBlock = ({ code }) => (
   </SyntaxHighlighter>
 );
 
+const scoreTone = (score) => {
+  if (score >= 91) return "Excellent signal. Ship with light cleanup.";
+  if (score >= 71) return "Solid base. A few fixes will raise confidence.";
+  if (score >= 41) return "Needs attention before merge.";
+  return "High risk. Resolve critical issues first.";
+};
+
 const ResultCard = ({ sections }) => {
+  const [copiedKey, setCopiedKey] = useState(null);
   if (!sections || sections.length === 0) return null;
+
+  const copyText = async (key, text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 1600);
+    } catch {
+      // ignore clipboard failures
+    }
+  };
+
   return (
     <div className="result-stack">
       {sections.map((s, i) => {
@@ -143,12 +162,19 @@ const ResultCard = ({ sections }) => {
           const score = parseInt(s.content, 10);
           const color = getScoreColor(score);
           return (
-            <div key={i} className="result-block score-block" style={{ "--score-color": color }}>
-              <p className="label">Code quality score</p>
-              <p className="value">
-                {score}
-                <span>/100</span>
-              </p>
+            <div
+              key={i}
+              className="result-block score-block"
+              style={{ "--score-color": color, "--score-pct": score }}
+            >
+              <div className="score-ring">
+                <strong>{score}</strong>
+              </div>
+              <div className="score-copy">
+                <p className="label">Quality score</p>
+                <h3>{score}/100</h3>
+                <p>{scoreTone(score)}</p>
+              </div>
             </div>
           );
         }
@@ -185,21 +211,22 @@ const ResultCard = ({ sections }) => {
         if (s.type === "code") {
           const codeMatch = s.content.match(/```(?:\w+)?\n?([\s\S]*?)```/);
           const codeToCopy = codeMatch ? codeMatch[1] : s.content;
+          const key = `code-${i}`;
           return (
             <div key={i} className="result-block result-code">
               <div className="code-result-head">
                 <h3>Fixed code</h3>
                 <button
                   type="button"
-                  className="copy-btn"
-                  onClick={() => {
-                    navigator.clipboard.writeText(codeToCopy);
-                  }}
+                  className={`copy-btn${copiedKey === key ? " copied" : ""}`}
+                  onClick={() => copyText(key, codeToCopy)}
                 >
-                  Copy code
+                  {copiedKey === key ? "Copied" : "Copy"}
                 </button>
               </div>
-              {codeMatch ? <CodeBlock code={codeMatch[1]} /> : (
+              {codeMatch ? (
+                <CodeBlock code={codeMatch[1]} />
+              ) : (
                 <div className="md">
                   <ReactMarkdown>{s.content}</ReactMarkdown>
                 </div>
@@ -223,7 +250,7 @@ const LandingPage = ({ onStart }) => (
   <div className="landing">
     <nav className="landing-nav fade-up">
       <div className="brand-mark">
-        DEVMIND<span>AI</span>
+        DEVMIND<span className="ai">AI</span>
       </div>
       <button type="button" className="btn btn-ghost" onClick={onStart}>
         Sign in
@@ -242,7 +269,7 @@ const LandingPage = ({ onStart }) => (
 
       <div className="hero-content">
         <h1 className="brand-mark hero-brand fade-up">
-          DEVMIND<span>AI</span>
+          DEVMIND<span className="ai">AI</span>
         </h1>
         <p className="hero-headline fade-up fade-up-delay-1">
           Ship cleaner code with an AI pair that reviews, debugs, and documents.
@@ -321,7 +348,7 @@ const SignInPage = ({ onSuccess, onBack }) => (
   <div className="signin">
     <aside className="signin-visual">
       <div className="brand-mark fade-up">
-        DEVMIND<span>AI</span>
+        DEVMIND<span className="ai">AI</span>
       </div>
       <div className="signin-visual-copy fade-up fade-up-delay-1">
         <h2>Your AI workspace for sharper shipping.</h2>
@@ -502,6 +529,16 @@ export default function App() {
   };
 
   const activeTool = TOOLS.find((t) => t.id === tab) ?? TOOLS[0];
+  const lineCount = code ? code.split(/\n/).length : 0;
+  const charCount = code.length;
+  const fileExt = {
+    python: "py",
+    javascript: "js",
+    java: "java",
+    "c++": "cpp",
+    html: "html",
+    css: "css",
+  }[language] || "txt";
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
@@ -513,40 +550,64 @@ export default function App() {
         <div className="dashboard">
           <header className="dash-header">
             <button type="button" className="brand-mark dash-brand" onClick={() => setPage("landing")}>
-              DEVMIND<span>AI</span>
+              DEVMIND<span className="ai">AI</span>
             </button>
-            {user && (
-              <div className="dash-user">
-                <img src={user.picture} alt={user.name} />
-                <span>{user.name}</span>
-                <button type="button" className="btn-signout" onClick={handleSignOut}>
-                  Sign out
-                </button>
+
+            <div className="dash-crumb">
+              <span>Workspace</span>
+              <span className="sep">/</span>
+              <strong>{activeTool.label}</strong>
+            </div>
+
+            <div className="dash-header-right">
+              <div className={`status-pill${loading ? " busy" : ""}`}>
+                <span className="pulse" />
+                {loading ? "Analyzing" : "Ready"}
               </div>
-            )}
+              {user && (
+                <div className="dash-user">
+                  <img src={user.picture} alt={user.name} />
+                  <div className="meta">
+                    <strong>{user.name}</strong>
+                    <span>{user.email}</span>
+                  </div>
+                  <button type="button" className="btn-signout" onClick={handleSignOut}>
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </header>
 
           <div className="dash-body">
             <aside className="dash-sidebar">
               <p className="sidebar-label">Tools</p>
-              {TOOLS.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  className={`tool-btn${tab === t.id ? " active" : ""}`}
-                  style={{ "--tool-color": t.color }}
-                  onClick={() => {
-                    setTab(t.id);
-                    setSections([]);
-                  }}
-                >
-                  <div className="tool-btn-title">
-                    <t.Icon />
-                    {t.label}
-                  </div>
-                  <p>{t.desc}</p>
-                </button>
-              ))}
+              <nav className="tool-nav">
+                {TOOLS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`tool-btn${tab === t.id ? " active" : ""}`}
+                    style={{ "--tool-color": t.color }}
+                    onClick={() => {
+                      setTab(t.id);
+                      setSections([]);
+                    }}
+                  >
+                    <div className="tool-btn-title">
+                      <span className="icon-wrap">
+                        <t.Icon />
+                      </span>
+                      {t.label}
+                    </div>
+                    <p>{t.desc}</p>
+                  </button>
+                ))}
+              </nav>
+              <div className="sidebar-foot">
+                <strong>Pro tip</strong>
+                <p>Load a GitHub file URL, then run {activeTool.short.toLowerCase()} without leaving the workspace.</p>
+              </div>
             </aside>
 
             <main className="dash-main">
@@ -562,119 +623,175 @@ export default function App() {
                         setSections([]);
                       }}
                     >
-                      {t.label}
+                      {t.short}
                     </button>
                   ))}
                 </div>
               )}
 
-              <div className="workspace-title">
-                <div>
-                  <h2>{activeTool.label}</h2>
-                  <p>{activeTool.desc}</p>
-                </div>
-              </div>
-
-              {tab === "bughunt" && (
-                <div className="field field-error">
-                  <label>Error message</label>
-                  <input
-                    placeholder="Paste your error message here..."
-                    value={error}
-                    onChange={(e) => setError(e.target.value)}
-                  />
-                </div>
-              )}
-
-              <div className="field">
-                <label>GitHub file URL (optional)</label>
-                <div className="inline-row">
-                  <input
-                    placeholder="https://github.com/user/repo/blob/main/file.py"
-                    value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                  />
-                  <button type="button" className="btn-secondary" onClick={fetchGithubCode}>
-                    Load
-                  </button>
-                </div>
-                {githubError && (
-                  <p className={`field-hint ${githubError.startsWith("ok:") ? "ok" : "err"}`}>
-                    {githubError.replace(/^(ok|err):/, "")}
-                  </p>
-                )}
-              </div>
-
-              <div className="field">
-                <label>{tab === "bughunt" ? "Your code (optional)" : "Paste your code"}</label>
-                <textarea
-                  placeholder="Paste your code here..."
-                  value={code}
-                  onChange={(e) => {
-                    setCode(e.target.value);
-                    setLanguage(detectLanguage(e.target.value));
-                  }}
-                />
-              </div>
-
-              <div className="controls">
-                <div className="field">
-                  <label>Language</label>
-                  <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                    {["python", "javascript", "java", "c++", "html", "css"].map((l) => (
-                      <option key={l} value={l}>
-                        {l.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {tab === "devdocs" && (
-                  <div className="field">
-                    <label>Doc type</label>
-                    <select value={docType} onChange={(e) => setDocType(e.target.value)}>
-                      {["readme", "api", "comments"].map((d) => (
-                        <option key={d} value={d}>
-                          {d.toUpperCase()}
-                        </option>
-                      ))}
-                    </select>
+              <div className="workspace-shell">
+                <section className="panel input-panel">
+                  <div className="panel-head">
+                    <div>
+                      <h2>Source</h2>
+                      <p>{activeTool.desc}</p>
+                    </div>
                   </div>
-                )}
 
-                <div className="field">
-                  <label>Upload</label>
-                  <label className="upload-btn">
-                    Choose file
-                    <input
-                      type="file"
-                      accept=".py,.js,.ts,.html,.css,.java,.cpp,.go,.rs"
-                      onChange={handleFile}
-                      style={{ display: "none" }}
-                    />
-                  </label>
-                </div>
+                  <div className="panel-body">
+                    {tab === "bughunt" && (
+                      <div className="error-banner">
+                        <label>Error message</label>
+                        <input
+                          placeholder="Paste your stack trace or error..."
+                          value={error}
+                          onChange={(e) => setError(e.target.value)}
+                        />
+                      </div>
+                    )}
 
-                <div className="field action">
-                  <label>Action</label>
-                  <button
-                    type="button"
-                    className="btn btn-accent"
-                    onClick={analyze}
-                    disabled={loading}
-                    style={{ background: activeTool.color }}
-                  >
-                    {loading ? `Analyzing${dots}` : "Analyze →"}
-                  </button>
-                </div>
+                    <div className="source-row">
+                      <input
+                        placeholder="GitHub file URL (optional)"
+                        value={githubUrl}
+                        onChange={(e) => setGithubUrl(e.target.value)}
+                      />
+                      <button type="button" className="btn-secondary" onClick={fetchGithubCode}>
+                        Load
+                      </button>
+                      <label className="upload-btn">
+                        Upload
+                        <input
+                          type="file"
+                          accept=".py,.js,.ts,.html,.css,.java,.cpp,.go,.rs"
+                          onChange={handleFile}
+                          style={{ display: "none" }}
+                        />
+                      </label>
+                    </div>
+                    {githubError && (
+                      <p className={`field-hint ${githubError.startsWith("ok:") ? "ok" : "err"}`}>
+                        {githubError.replace(/^(ok|err):/, "")}
+                      </p>
+                    )}
+
+                    <div className="editor">
+                      <div className="editor-chrome">
+                        <div className="editor-dots" aria-hidden="true">
+                          <span /><span /><span />
+                        </div>
+                        <div className="editor-file">main.{fileExt}</div>
+                        <div className="editor-meta">
+                          <span className="lang-badge">{language}</span>
+                        </div>
+                      </div>
+                      <textarea
+                        placeholder={
+                          tab === "bughunt"
+                            ? "Optional: paste related source for better fixes..."
+                            : "Paste your code here..."
+                        }
+                        value={code}
+                        onChange={(e) => {
+                          setCode(e.target.value);
+                          setLanguage(detectLanguage(e.target.value));
+                        }}
+                        spellCheck={false}
+                      />
+                      <div className="editor-foot">
+                        <span>{lineCount} lines</span>
+                        <span>{charCount} chars</span>
+                      </div>
+                    </div>
+
+                    <div className="action-bar">
+                      <div className="field">
+                        <label>Language</label>
+                        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                          {["python", "javascript", "java", "c++", "html", "css"].map((l) => (
+                            <option key={l} value={l}>
+                              {l.toUpperCase()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {tab === "devdocs" && (
+                        <div className="field">
+                          <label>Doc type</label>
+                          <select value={docType} onChange={(e) => setDocType(e.target.value)}>
+                            {["readme", "api", "comments"].map((d) => (
+                              <option key={d} value={d}>
+                                {d.toUpperCase()}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="run">
+                        <button
+                          type="button"
+                          className="btn-run"
+                          onClick={analyze}
+                          disabled={loading}
+                        >
+                          {loading ? `Running${dots}` : "Run analysis"}
+                          {!loading && <span className="kbd">↵</span>}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="panel output-panel">
+                  <div className="panel-head">
+                    <div>
+                      <h2>Output</h2>
+                      <p>
+                        {loading
+                          ? "Model is reviewing your source..."
+                          : sections.length > 0
+                            ? "Latest analysis"
+                            : "Results appear here"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="panel-body">
+                    {loading && (
+                      <div className="output-loading">
+                        <div>
+                          <div className="glyph">
+                            <activeTool.Icon />
+                          </div>
+                          <h3>Analyzing {activeTool.label.toLowerCase()}</h3>
+                          <p>Parsing structure, risks, and suggested fixes.</p>
+                          <div className="loading-bars" aria-hidden="true">
+                            <span /><span /><span />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!loading && sections.length === 0 && (
+                      <div className="output-empty">
+                        <div>
+                          <div className="glyph">
+                            <activeTool.Icon />
+                          </div>
+                          <h3>Ready when you are</h3>
+                          <p>
+                            Paste code or load a GitHub file, then run {activeTool.short.toLowerCase()} to see structured results.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!loading && sections.length > 0 && <ResultCard sections={sections} />}
+                  </div>
+                </section>
               </div>
-
-              {sections.length > 0 && (
-                <div className="results-wrap">
-                  <div className="results-label">Analysis results</div>
-                  <ResultCard sections={sections} />
-                </div>
-              )}
             </main>
           </div>
         </div>
