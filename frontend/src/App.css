@@ -834,8 +834,8 @@
 }
 
 .sidebar-foot {
-  margin-top: 1rem;
-  padding: 0.85rem 0.9rem;
+  margin-top: 1.15rem;
+  padding: 0.95rem 1rem;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, #fff, #f7fafc);
@@ -907,7 +907,7 @@
 
 .panel-head p {
   margin: 0.15rem 0 0;
-  color: var(--ink-muted);
+  color: var(--ink-soft);
   font-size: 0.78rem;
 }
 
@@ -923,7 +923,7 @@
 .source-row {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
 .source-row input {
@@ -1407,6 +1407,7 @@
     background: var(--ink);
     color: #fff;
     border-color: var(--ink);
+    box-shadow: inset 0 -2px 0 rgba(126, 224, 228, 0.85);
   }
 
   .dash-user .meta {
