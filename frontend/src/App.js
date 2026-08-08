@@ -262,39 +262,47 @@ const LandingPage = ({ onStart }) => (
         <div className="hero-grid" />
         <div className="hero-orb hero-orb-a" />
         <div className="hero-orb hero-orb-b" />
+        <div className="hero-orb hero-orb-c" />
         <div className="hero-codeplane">
           <pre>{`${HERO_CODE}\n\n${HERO_CODE}`}</pre>
         </div>
+        <div className="hero-vignette" />
       </div>
 
       <div className="hero-content">
-        <h1 className="brand-mark hero-brand fade-up">
+        <h1 className="brand-mark hero-brand">
           DEVMIND<span className="ai">AI</span>
         </h1>
         <p className="hero-headline fade-up fade-up-delay-1">
-          Ship cleaner code with an AI pair that reviews, debugs, and documents.
+          An AI pair for cleaner, sharper shipping.
         </p>
         <p className="hero-support fade-up fade-up-delay-2">
-          Paste a file or pull one from GitHub. Get a score, fixes, and docs in one workspace.
+          Review, debug, and document from one calm workspace — paste code or pull a GitHub file.
         </p>
         <div className="hero-cta fade-up fade-up-delay-3">
           <button type="button" className="btn btn-primary" onClick={onStart}>
-            Get started
+            Enter workspace
             <span aria-hidden="true">→</span>
           </button>
         </div>
       </div>
+
+      <a className="hero-scroll" href="#toolkit">
+        Explore
+        <i aria-hidden="true" />
+      </a>
     </section>
 
-    <section className="landing-section">
+    <section className="landing-section" id="toolkit">
       <p className="section-kicker">Toolkit</p>
-      <h2 className="section-title">Five focused tools. One flow.</h2>
+      <h2 className="section-title">Five tools. One continuous flow.</h2>
       <p className="section-copy">
         Move from review to fix to documentation without leaving the editor.
       </p>
       <div className="tools-rail">
-        {TOOLS.map(({ id, label, desc, Icon }) => (
+        {TOOLS.map(({ id, label, desc, Icon }, index) => (
           <div key={id} className="tool-cell">
+            <span className="tool-index">0{index + 1}</span>
             <div className="tool-icon">
               <Icon />
             </div>
@@ -305,7 +313,7 @@ const LandingPage = ({ onStart }) => (
       </div>
     </section>
 
-    <section className="landing-section" style={{ paddingTop: 0 }}>
+    <section className="landing-section">
       <div className="feature-split">
         <div>
           <p className="section-kicker">GitHub access</p>
@@ -324,22 +332,39 @@ const LandingPage = ({ onStart }) => (
             <span className="dot live" />
             <span>github.com / allen745 / main.py</span>
           </div>
+          <div className="feature-score" aria-hidden="true">
+            <strong>88</strong>
+          </div>
           <pre>{`# Loaded from GitHub
 POST /review
 language: python
-score: 88/100
 
 security:
   - avoid hardcoding secrets
 recommendations:
   - type the request body
-  - add structured logging`}</pre>
+  - add structured logging
+status: ready to merge`}</pre>
         </div>
       </div>
     </section>
 
+    <section className="landing-cta">
+      <div>
+        <h2>Start with signal, not noise.</h2>
+        <p>Sign in and run your first review in under a minute.</p>
+      </div>
+      <button type="button" className="btn btn-primary" onClick={onStart}>
+        Get started
+        <span aria-hidden="true">→</span>
+      </button>
+    </section>
+
     <footer className="landing-footer">
-      DevMind AI — built for developers who want signal, not noise.
+      <div className="brand-mark">
+        DEVMIND<span className="ai">AI</span>
+      </div>
+      <span>Built for developers who want sharper shipping.</span>
     </footer>
   </div>
 );
