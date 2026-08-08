@@ -1655,4 +1655,223 @@
   .workspace-shell {
     min-height: auto;
   }
+
+  .history-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .history-detail-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .output-actions {
+    width: 100%;
+  }
+
+  .output-actions .btn-secondary {
+    flex: 1;
+  }
+}
+
+/* History + extras */
+.tool-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.hist-count {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: var(--ink);
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  line-height: 1.2;
+}
+
+.history-shell {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+}
+
+.history-controls {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 0.55rem;
+}
+
+.history-controls input,
+.history-controls select {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0.7rem 0.85rem;
+  outline: none;
+  font-size: 0.84rem;
+}
+
+.history-controls input:focus,
+.history-controls select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.history-item {
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  color: var(--ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.history-item:hover,
+.history-item.active {
+  border-color: rgba(13, 115, 119, 0.35);
+  box-shadow: 0 10px 24px rgba(12, 21, 36, 0.05);
+}
+
+.history-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.history-item-top strong {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: -0.02em;
+}
+
+.history-item-top span,
+.history-item-meta span,
+.history-detail-meta span {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+
+.history-item p {
+  margin: 0 0 0.55rem;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.history-item-meta {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.history-detail-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.55rem;
+}
+
+.history-detail-actions .btn-run {
+  justify-content: center;
+}
+
+.btn-secondary.danger {
+  color: var(--bad);
+  border-color: rgba(214, 69, 69, 0.35);
+}
+
+.btn-secondary.danger:hover {
+  color: #fff;
+  background: var(--bad);
+  border-color: var(--bad);
+}
+
+.history-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.history-code-preview {
+  border: 1px solid #1a2332;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel-2);
+}
+
+.history-code-preview .editor-chrome {
+  justify-content: flex-start;
+}
+
+.history-code-preview pre {
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  padding: 0.85rem 1rem;
+  color: #d7e0ea;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.output-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.output-actions .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.8rem;
+}
+
+.output-actions .btn-secondary svg {
+  width: 14px;
+  height: 14px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.84rem;
+  font-weight: 650;
+  box-shadow: 0 14px 34px rgba(12, 21, 36, 0.22);
+  animation: fadeUp 0.25s ease both;
+}
+
+@media (max-width: 1180px) {
+  .history-shell {
+    grid-template-columns: 1fr;
+  }
 }

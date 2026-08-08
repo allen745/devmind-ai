@@ -96,6 +96,19 @@ const IconCheck = () => (
   </svg>
 );
 
+const IconHistory = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" strokeLinecap="round" />
+    <path d="M4.5 5.5v4h4M12 8v4.5l3 1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconDownload = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M12 4v10M8 10.5 12 14.5 16 10.5M6 18.5h12" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const TOOLS = [
   { id: "review", label: "Code Review", short: "Review", desc: "Score quality, bugs, and security", color: "#0d7377", Icon: IconReview },
   { id: "bughunt", label: "Bug Hunt", short: "Bugs", desc: "Trace errors to a concrete fix", color: "#d64545", Icon: IconBug },
@@ -103,6 +116,80 @@ const TOOLS = [
   { id: "complexity", label: "Complexity", short: "Big-O", desc: "Estimate time and space cost", color: "#c27803", Icon: IconZap },
   { id: "commit", label: "Git Commit", short: "Commit", desc: "Craft clear commit messages", color: "#0f9f6e", Icon: IconCommit },
 ];
+
+const HISTORY_TOOL = {
+  id: "history",
+  label: "History",
+  short: "History",
+  desc: "Revisit your past analyses",
+  color: "#5b6b7c",
+  Icon: IconHistory,
+};
+
+const NAV_ITEMS = [...TOOLS, HISTORY_TOOL];
+const MAX_HISTORY = 50;
+
+const storageKey = (base, email) => `${base}_${email || "guest"}`;
+
+const loadHistory = (email) => {
+  try {
+    const raw = localStorage.getItem(storageKey("devmind_history", email));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const persistHistory = (email, items) => {
+  try {
+    localStorage.setItem(storageKey("devmind_history", email), JSON.stringify(items.slice(0, MAX_HISTORY)));
+  } catch {
+    // ignore quota / private mode
+  }
+};
+
+const loadDraft = (email) => {
+  try {
+    const raw = localStorage.getItem(storageKey("devmind_draft", email));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const persistDraft = (email, draft) => {
+  try {
+    localStorage.setItem(storageKey("devmind_draft", email), JSON.stringify(draft));
+  } catch {
+    // ignore
+  }
+};
+
+const formatWhen = (iso) => {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+};
+
+const sectionsToMarkdown = (sections, toolLabel) => {
+  const parts = [`# DevMind AI — ${toolLabel}`, ""];
+  sections.forEach((s) => {
+    if (s.type === "score") parts.push(`## Score\n\n${s.content}/100\n`);
+    else if (s.type === "bugs") parts.push(`## Bugs\n\n${s.content}\n`);
+    else if (s.type === "security") parts.push(`## Security\n\n${s.content}\n`);
+    else if (s.type === "recommendations") parts.push(`## Recommendations\n\n${s.content}\n`);
+    else if (s.type === "code") parts.push(`## Fixed code\n\n${s.content}\n`);
+    else parts.push(`${s.content}\n`);
+  });
+  return parts.join("\n");
+};
 
 const HERO_CODE = `from fastapi import FastAPI
 from groq import Groq
@@ -455,16 +542,56 @@ export default function App() {
     }
   });
 
-  const [tab, setTab] = useState("review");
-  const [code, setCode] = useState("");
-  const [language, setLanguage] = useState("python");
-  const [error, setError] = useState("");
-  const [docType, setDocType] = useState("readme");
+  const initialDraft = (() => {
+    try {
+      const saved = localStorage.getItem("devmind_user");
+      const parsed = saved ? JSON.parse(saved) : null;
+      return loadDraft(parsed?.email);
+    } catch {
+      return null;
+    }
+  })();
+
+  const [tab, setTab] = useState(initialDraft?.tab && initialDraft.tab !== "history" ? initialDraft.tab : "review");
+  const [code, setCode] = useState(initialDraft?.code || "");
+  const [language, setLanguage] = useState(initialDraft?.language || "python");
+  const [error, setError] = useState(initialDraft?.error || "");
+  const [docType, setDocType] = useState(initialDraft?.docType || "readme");
   const [sections, setSections] = useState([]);
+  const [rawOutput, setRawOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [dots, setDots] = useState("");
-  const [githubUrl, setGithubUrl] = useState("");
+  const [githubUrl, setGithubUrl] = useState(initialDraft?.githubUrl || "");
   const [githubError, setGithubError] = useState("");
+  const [history, setHistory] = useState(() => loadHistory(user?.email));
+  const [historyFilter, setHistoryFilter] = useState("all");
+  const [historyQuery, setHistoryQuery] = useState("");
+  const [selectedHistoryId, setSelectedHistoryId] = useState(null);
+  const [toast, setToast] = useState("");
+
+  const showToast = (message) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 1800);
+  };
+
+  useEffect(() => {
+    setHistory(loadHistory(user?.email));
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (!user || page !== "app") return undefined;
+    const timer = window.setTimeout(() => {
+      persistDraft(user.email, {
+        tab: tab === "history" ? "review" : tab,
+        code,
+        language,
+        error,
+        docType,
+        githubUrl,
+      });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [user, page, tab, code, language, error, docType, githubUrl]);
 
   const handleSignIn = (userData) => {
     try {
@@ -472,6 +599,16 @@ export default function App() {
     } catch {
       // continue without persistence
     }
+    const draft = loadDraft(userData.email);
+    if (draft) {
+      setTab(draft.tab && draft.tab !== "history" ? draft.tab : "review");
+      setCode(draft.code || "");
+      setLanguage(draft.language || "python");
+      setError(draft.error || "");
+      setDocType(draft.docType || "readme");
+      setGithubUrl(draft.githubUrl || "");
+    }
+    setHistory(loadHistory(userData.email));
     setUser(userData);
     setPage("app");
   };
@@ -487,9 +624,48 @@ export default function App() {
     setPage("landing");
   };
 
+  const addHistoryEntry = (entry) => {
+    setHistory((prev) => {
+      const next = [entry, ...prev].slice(0, MAX_HISTORY);
+      persistHistory(user?.email, next);
+      return next;
+    });
+  };
+
+  const deleteHistoryEntry = (id) => {
+    setHistory((prev) => {
+      const next = prev.filter((item) => item.id !== id);
+      persistHistory(user?.email, next);
+      return next;
+    });
+    if (selectedHistoryId === id) setSelectedHistoryId(null);
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    persistHistory(user?.email, []);
+    setSelectedHistoryId(null);
+    showToast("History cleared");
+  };
+
+  const openHistoryEntry = (item) => {
+    setTab(item.tool);
+    setCode(item.code || "");
+    setLanguage(item.language || "python");
+    setError(item.error || "");
+    setDocType(item.docType || "readme");
+    setGithubUrl(item.githubUrl || "");
+    setRawOutput(item.rawText || "");
+    setSections(item.sections?.length ? item.sections : formatOutput(item.rawText || "", item.tool));
+    setSelectedHistoryId(item.id);
+    showToast("Restored from history");
+  };
+
   const analyze = async () => {
+    if (tab === "history") return;
     setLoading(true);
     setSections([]);
+    setRawOutput("");
     const dotsInterval = setInterval(() => {
       setDots((prev) => (prev.length >= 3 ? "" : `${prev}.`));
     }, 400);
@@ -519,15 +695,49 @@ export default function App() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      const rawText = data.review || data.solution || data.documentation || data.complexity || data.commit;
-      setSections(formatOutput(rawText, tab));
+      const rawText = data.review || data.solution || data.documentation || data.complexity || data.commit || "";
+      const nextSections = formatOutput(rawText, tab);
+      setRawOutput(rawText);
+      setSections(nextSections);
+
+      if (rawText && !String(rawText).includes("Error connecting to API")) {
+        const toolMeta = TOOLS.find((t) => t.id === tab);
+        addHistoryEntry({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          tool: tab,
+          toolLabel: toolMeta?.label || tab,
+          language,
+          code,
+          error,
+          docType,
+          githubUrl,
+          rawText,
+          sections: nextSections,
+          preview: String(rawText).replace(/\s+/g, " ").slice(0, 140),
+          createdAt: new Date().toISOString(),
+        });
+      }
     } catch {
       setSections([{ type: "raw", content: "Error connecting to API. Please try again." }]);
+      setRawOutput("");
     }
     clearInterval(dotsInterval);
     setDots("");
     setLoading(false);
   };
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        if (page === "app" && tab !== "history" && !loading) {
+          e.preventDefault();
+          analyze();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -553,7 +763,39 @@ export default function App() {
     }
   };
 
-  const activeTool = TOOLS.find((t) => t.id === tab) ?? TOOLS[0];
+  const clearEditor = () => {
+    setCode("");
+    setError("");
+    setGithubUrl("");
+    setGithubError("");
+    setSections([]);
+    setRawOutput("");
+    showToast("Editor cleared");
+  };
+
+  const exportOutput = () => {
+    const md = sectionsToMarkdown(sections, activeTool.label);
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `devmind-${tab}-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Exported markdown");
+  };
+
+  const copyOutput = async () => {
+    try {
+      await navigator.clipboard.writeText(rawOutput || sectionsToMarkdown(sections, activeTool.label));
+      showToast("Output copied");
+    } catch {
+      showToast("Copy failed");
+    }
+  };
+
+  const activeTool = NAV_ITEMS.find((t) => t.id === tab) ?? TOOLS[0];
+  const isHistory = tab === "history";
   const lineCount = code ? code.split(/\n/).length : 0;
   const charCount = code.length;
   const fileExt = {
@@ -564,6 +806,29 @@ export default function App() {
     html: "html",
     css: "css",
   }[language] || "txt";
+
+  const filteredHistory = history.filter((item) => {
+    const toolOk = historyFilter === "all" || item.tool === historyFilter;
+    const q = historyQuery.trim().toLowerCase();
+    const queryOk =
+      !q ||
+      item.toolLabel?.toLowerCase().includes(q) ||
+      item.language?.toLowerCase().includes(q) ||
+      item.preview?.toLowerCase().includes(q) ||
+      item.code?.toLowerCase().includes(q);
+    return toolOk && queryOk;
+  });
+
+  const selectedHistory = history.find((item) => item.id === selectedHistoryId) || null;
+
+  const switchTab = (id) => {
+    setTab(id);
+    if (id !== "history") {
+      setSections([]);
+      setRawOutput("");
+      setSelectedHistoryId(null);
+    }
+  };
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
@@ -608,22 +873,24 @@ export default function App() {
             <aside className="dash-sidebar">
               <p className="sidebar-label">Tools</p>
               <nav className="tool-nav">
-                {TOOLS.map((t) => (
+                {NAV_ITEMS.map((t) => (
                   <button
                     key={t.id}
                     type="button"
                     className={`tool-btn${tab === t.id ? " active" : ""}`}
                     style={{ "--tool-color": t.color }}
-                    onClick={() => {
-                      setTab(t.id);
-                      setSections([]);
-                    }}
+                    onClick={() => switchTab(t.id)}
                   >
                     <div className="tool-btn-title">
                       <span className="icon-wrap">
                         <t.Icon />
                       </span>
-                      {t.label}
+                      <span className="tool-label-row">
+                        {t.label}
+                        {t.id === "history" && history.length > 0 && (
+                          <em className="hist-count">{history.length}</em>
+                        )}
+                      </span>
                     </div>
                     <p>{t.desc}</p>
                   </button>
@@ -631,22 +898,23 @@ export default function App() {
               </nav>
               <div className="sidebar-foot">
                 <strong>Pro tip</strong>
-                <p>Load a GitHub file URL, then run {activeTool.short.toLowerCase()} without leaving the workspace.</p>
+                <p>
+                  {isHistory
+                    ? "Open any run to restore the source and output instantly."
+                    : `Load a GitHub file URL, then run ${activeTool.short.toLowerCase()} without leaving the workspace.`}
+                </p>
               </div>
             </aside>
 
             <main className="dash-main">
               {isMobile && (
                 <div className="mobile-tools">
-                  {TOOLS.map((t) => (
+                  {NAV_ITEMS.map((t) => (
                     <button
                       key={t.id}
                       type="button"
                       className={`mobile-tool${tab === t.id ? " active" : ""}`}
-                      onClick={() => {
-                        setTab(t.id);
-                        setSections([]);
-                      }}
+                      onClick={() => switchTab(t.id)}
                     >
                       {t.short}
                     </button>
@@ -654,171 +922,315 @@ export default function App() {
                 </div>
               )}
 
-              <div className="workspace-shell">
-                <section className="panel input-panel">
-                  <div className="panel-head">
-                    <div>
-                      <h2>Source</h2>
-                      <p>{activeTool.desc}</p>
+              {isHistory ? (
+                <div className="workspace-shell history-shell">
+                  <section className="panel history-list-panel">
+                    <div className="panel-head">
+                      <div>
+                        <h2>History</h2>
+                        <p>{history.length} saved run{history.length === 1 ? "" : "s"} for this account</p>
+                      </div>
+                      {history.length > 0 && (
+                        <button type="button" className="btn-secondary" onClick={clearHistory}>
+                          Clear all
+                        </button>
+                      )}
                     </div>
-                  </div>
-
-                  <div className="panel-body">
-                    {tab === "bughunt" && (
-                      <div className="error-banner">
-                        <label>Error message</label>
+                    <div className="panel-body">
+                      <div className="history-controls">
                         <input
-                          placeholder="Paste your stack trace or error..."
-                          value={error}
-                          onChange={(e) => setError(e.target.value)}
+                          value={historyQuery}
+                          onChange={(e) => setHistoryQuery(e.target.value)}
+                          placeholder="Search code or results..."
                         />
-                      </div>
-                    )}
-
-                    <div className="source-row">
-                      <input
-                        placeholder="GitHub file URL (optional)"
-                        value={githubUrl}
-                        onChange={(e) => setGithubUrl(e.target.value)}
-                      />
-                      <button type="button" className="btn-secondary" onClick={fetchGithubCode}>
-                        Load
-                      </button>
-                      <label className="upload-btn">
-                        Upload
-                        <input
-                          type="file"
-                          accept=".py,.js,.ts,.html,.css,.java,.cpp,.go,.rs"
-                          onChange={handleFile}
-                          style={{ display: "none" }}
-                        />
-                      </label>
-                    </div>
-                    {githubError && (
-                      <p className={`field-hint ${githubError.startsWith("ok:") ? "ok" : "err"}`}>
-                        {githubError.replace(/^(ok|err):/, "")}
-                      </p>
-                    )}
-
-                    <div className="editor">
-                      <div className="editor-chrome">
-                        <div className="editor-dots" aria-hidden="true">
-                          <span /><span /><span />
-                        </div>
-                        <div className="editor-file">main.{fileExt}</div>
-                        <div className="editor-meta">
-                          <span className="lang-badge">{language}</span>
-                        </div>
-                      </div>
-                      <textarea
-                        placeholder={
-                          tab === "bughunt"
-                            ? "Optional: paste related source for better fixes..."
-                            : "Paste your code here..."
-                        }
-                        value={code}
-                        onChange={(e) => {
-                          setCode(e.target.value);
-                          setLanguage(detectLanguage(e.target.value));
-                        }}
-                        spellCheck={false}
-                      />
-                      <div className="editor-foot">
-                        <span>{lineCount} lines</span>
-                        <span>{charCount} chars</span>
-                      </div>
-                    </div>
-
-                    <div className="action-bar">
-                      <div className="field">
-                        <label>Language</label>
-                        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                          {["python", "javascript", "java", "c++", "html", "css"].map((l) => (
-                            <option key={l} value={l}>
-                              {l.toUpperCase()}
-                            </option>
+                        <select value={historyFilter} onChange={(e) => setHistoryFilter(e.target.value)}>
+                          <option value="all">All tools</option>
+                          {TOOLS.map((t) => (
+                            <option key={t.id} value={t.id}>{t.label}</option>
                           ))}
                         </select>
                       </div>
 
-                      {tab === "devdocs" && (
+                      {filteredHistory.length === 0 ? (
+                        <div className="output-empty">
+                          <div>
+                            <div className="glyph">
+                              <IconHistory />
+                            </div>
+                            <h3>{history.length ? "No matches" : "No history yet"}</h3>
+                            <p>
+                              {history.length
+                                ? "Try another search or filter."
+                                : "Run a review, bug hunt, or docs pass — it will show up here automatically."}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="history-list">
+                          {filteredHistory.map((item) => {
+                            const meta = TOOLS.find((t) => t.id === item.tool);
+                            return (
+                              <button
+                                key={item.id}
+                                type="button"
+                                className={`history-item${selectedHistoryId === item.id ? " active" : ""}`}
+                                onClick={() => setSelectedHistoryId(item.id)}
+                              >
+                                <div className="history-item-top">
+                                  <strong>{item.toolLabel || meta?.label || item.tool}</strong>
+                                  <span>{formatWhen(item.createdAt)}</span>
+                                </div>
+                                <p>{item.preview || "No preview"}</p>
+                                <div className="history-item-meta">
+                                  <span>{(item.language || "python").toUpperCase()}</span>
+                                  <span>{(item.code || "").split(/\n/).length} lines</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="panel history-detail-panel">
+                    <div className="panel-head">
+                      <div>
+                        <h2>Details</h2>
+                        <p>{selectedHistory ? "Restore or delete this run" : "Select a run to inspect"}</p>
+                      </div>
+                    </div>
+                    <div className="panel-body">
+                      {!selectedHistory ? (
+                        <div className="output-empty">
+                          <div>
+                            <div className="glyph">
+                              <IconHistory />
+                            </div>
+                            <h3>Pick a past run</h3>
+                            <p>See the saved output, then restore it into the workspace.</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="history-detail-actions">
+                            <button type="button" className="btn-run" onClick={() => openHistoryEntry(selectedHistory)}>
+                              Open in workspace
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary danger"
+                              onClick={() => deleteHistoryEntry(selectedHistory.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                          <div className="history-detail-meta">
+                            <span>{selectedHistory.toolLabel}</span>
+                            <span>{formatWhen(selectedHistory.createdAt)}</span>
+                            <span>{(selectedHistory.language || "python").toUpperCase()}</span>
+                          </div>
+                          <div className="history-code-preview">
+                            <div className="editor-chrome">
+                              <div className="editor-file">saved source</div>
+                            </div>
+                            <pre>{selectedHistory.code || "// no source saved"}</pre>
+                          </div>
+                          <ResultCard
+                            sections={
+                              selectedHistory.sections?.length
+                                ? selectedHistory.sections
+                                : formatOutput(selectedHistory.rawText || "", selectedHistory.tool)
+                            }
+                          />
+                        </>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              ) : (
+                <div className="workspace-shell">
+                  <section className="panel input-panel">
+                    <div className="panel-head">
+                      <div>
+                        <h2>Source</h2>
+                        <p>{activeTool.desc}</p>
+                      </div>
+                      <button type="button" className="btn-secondary" onClick={clearEditor}>
+                        Clear
+                      </button>
+                    </div>
+
+                    <div className="panel-body">
+                      {tab === "bughunt" && (
+                        <div className="error-banner">
+                          <label>Error message</label>
+                          <input
+                            placeholder="Paste your stack trace or error..."
+                            value={error}
+                            onChange={(e) => setError(e.target.value)}
+                          />
+                        </div>
+                      )}
+
+                      <div className="source-row">
+                        <input
+                          placeholder="GitHub file URL (optional)"
+                          value={githubUrl}
+                          onChange={(e) => setGithubUrl(e.target.value)}
+                        />
+                        <button type="button" className="btn-secondary" onClick={fetchGithubCode}>
+                          Load
+                        </button>
+                        <label className="upload-btn">
+                          Upload
+                          <input
+                            type="file"
+                            accept=".py,.js,.ts,.html,.css,.java,.cpp,.go,.rs"
+                            onChange={handleFile}
+                            style={{ display: "none" }}
+                          />
+                        </label>
+                      </div>
+                      {githubError && (
+                        <p className={`field-hint ${githubError.startsWith("ok:") ? "ok" : "err"}`}>
+                          {githubError.replace(/^(ok|err):/, "")}
+                        </p>
+                      )}
+
+                      <div className="editor">
+                        <div className="editor-chrome">
+                          <div className="editor-dots" aria-hidden="true">
+                            <span /><span /><span />
+                          </div>
+                          <div className="editor-file">main.{fileExt}</div>
+                          <div className="editor-meta">
+                            <span className="lang-badge">{language}</span>
+                          </div>
+                        </div>
+                        <textarea
+                          placeholder={
+                            tab === "bughunt"
+                              ? "Optional: paste related source for better fixes..."
+                              : "Paste your code here..."
+                          }
+                          value={code}
+                          onChange={(e) => {
+                            setCode(e.target.value);
+                            setLanguage(detectLanguage(e.target.value));
+                          }}
+                          spellCheck={false}
+                        />
+                        <div className="editor-foot">
+                          <span>{lineCount} lines</span>
+                          <span>{charCount} chars</span>
+                          <span>Draft autosaved</span>
+                        </div>
+                      </div>
+
+                      <div className="action-bar">
                         <div className="field">
-                          <label>Doc type</label>
-                          <select value={docType} onChange={(e) => setDocType(e.target.value)}>
-                            {["readme", "api", "comments"].map((d) => (
-                              <option key={d} value={d}>
-                                {d.toUpperCase()}
+                          <label>Language</label>
+                          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                            {["python", "javascript", "java", "c++", "html", "css"].map((l) => (
+                              <option key={l} value={l}>
+                                {l.toUpperCase()}
                               </option>
                             ))}
                           </select>
                         </div>
+
+                        {tab === "devdocs" && (
+                          <div className="field">
+                            <label>Doc type</label>
+                            <select value={docType} onChange={(e) => setDocType(e.target.value)}>
+                              {["readme", "api", "comments"].map((d) => (
+                                <option key={d} value={d}>
+                                  {d.toUpperCase()}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        <div className="run">
+                          <button
+                            type="button"
+                            className="btn-run"
+                            onClick={analyze}
+                            disabled={loading}
+                          >
+                            {loading ? `Running${dots}` : "Run analysis"}
+                            {!loading && <span className="kbd">⌘↵</span>}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="panel output-panel">
+                    <div className="panel-head">
+                      <div>
+                        <h2>Output</h2>
+                        <p>
+                          {loading
+                            ? "Model is reviewing your source..."
+                            : sections.length > 0
+                              ? "Latest analysis · saved to History"
+                              : "Results appear here"}
+                        </p>
+                      </div>
+                      {!loading && sections.length > 0 && (
+                        <div className="output-actions">
+                          <button type="button" className="btn-secondary" onClick={copyOutput}>
+                            Copy
+                          </button>
+                          <button type="button" className="btn-secondary" onClick={exportOutput}>
+                            <IconDownload /> Export
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="panel-body">
+                      {loading && (
+                        <div className="output-loading">
+                          <div>
+                            <div className="glyph">
+                              <activeTool.Icon />
+                            </div>
+                            <h3>Analyzing {activeTool.label.toLowerCase()}</h3>
+                            <p>Parsing structure, risks, and suggested fixes.</p>
+                            <div className="loading-bars" aria-hidden="true">
+                              <span /><span /><span />
+                            </div>
+                          </div>
+                        </div>
                       )}
 
-                      <div className="run">
-                        <button
-                          type="button"
-                          className="btn-run"
-                          onClick={analyze}
-                          disabled={loading}
-                        >
-                          {loading ? `Running${dots}` : "Run analysis"}
-                          {!loading && <span className="kbd">↵</span>}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="panel output-panel">
-                  <div className="panel-head">
-                    <div>
-                      <h2>Output</h2>
-                      <p>
-                        {loading
-                          ? "Model is reviewing your source..."
-                          : sections.length > 0
-                            ? "Latest analysis"
-                            : "Results appear here"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="panel-body">
-                    {loading && (
-                      <div className="output-loading">
-                        <div>
-                          <div className="glyph">
-                            <activeTool.Icon />
-                          </div>
-                          <h3>Analyzing {activeTool.label.toLowerCase()}</h3>
-                          <p>Parsing structure, risks, and suggested fixes.</p>
-                          <div className="loading-bars" aria-hidden="true">
-                            <span /><span /><span />
+                      {!loading && sections.length === 0 && (
+                        <div className="output-empty">
+                          <div>
+                            <div className="glyph">
+                              <activeTool.Icon />
+                            </div>
+                            <h3>Ready when you are</h3>
+                            <p>
+                              Paste code or load a GitHub file, then run {activeTool.short.toLowerCase()} to see structured results.
+                            </p>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {!loading && sections.length === 0 && (
-                      <div className="output-empty">
-                        <div>
-                          <div className="glyph">
-                            <activeTool.Icon />
-                          </div>
-                          <h3>Ready when you are</h3>
-                          <p>
-                            Paste code or load a GitHub file, then run {activeTool.short.toLowerCase()} to see structured results.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {!loading && sections.length > 0 && <ResultCard sections={sections} />}
-                  </div>
-                </section>
-              </div>
+                      {!loading && sections.length > 0 && <ResultCard sections={sections} />}
+                    </div>
+                  </section>
+                </div>
+              )}
             </main>
           </div>
+
+          {toast && <div className="toast">{toast}</div>}
         </div>
       )}
     </GoogleOAuthProvider>
